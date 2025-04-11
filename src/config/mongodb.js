@@ -8,7 +8,7 @@ let db;
 export const connectDb = async () => {
   try {
     await client.connect();
-    db = client.db('ecommerce');
+    db = client.db(env.DB_NAME);
     console.log('Connect Db thành công!!');
   } catch (error) {
     console.log('Connect db thất bại ', error);
