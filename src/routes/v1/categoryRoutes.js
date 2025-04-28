@@ -8,5 +8,4 @@ const categoryRoutes = express.Router();
 categoryRoutes.get('/', categoryController.getAll)
 categoryRoutes.post('/', validateBody(categoryValidate), categoryController.create)
 categoryRoutes.put('/:id',validateBody(categoryValidate), categoryController.update)
-categoryRoutes.delete('/:id', categoryController.destroy);
 export default categoryRoutes

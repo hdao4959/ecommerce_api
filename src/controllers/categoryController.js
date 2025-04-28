@@ -1,13 +1,13 @@
 import Category from "../models/categoryModel.js"
 import categoryService from "../services/categoryService.js"
-import { successResponse } from "../utils/response.js"
+import { errorResponse, successResponse } from "../utils/response.js"
 import CategoryValidate from "../validators/categoryValidate.js"
 import CategorySchema from "../validators/categoryValidate.js"
 
 const getAll = async (req, res, next) => {
   try {
     const result = await categoryService.getAll()
-    return res.json(result)
+    return successResponse(res, {data: result},200);
   } catch (error) {
     next(error)
   }
@@ -35,21 +35,19 @@ const update = async (req, res, next) => {
 const destroy = async (req, res, next) =>{
   try {
     const categoryId = req.params.id;
+    const result = await categoryService.destroy(categoryId)
 
-    const deleted = await Category.deleteById(categoryId);
-    if (!deleted) {
-      return res.status(404).json({
-        message: "Danh mục này không tồn tại!"
-      })
+    if(!result.success){
+      return errorResponse(res, {message: result.message}, result.statusCode);
     }
 
-    return res.status(200).json({
-      message: "Xoá danh mục thành công!"
-    })
+    return successResponse(res, {message: result.message}, result.statusCode);
   } catch (error) {
     next(error)
   }
 }
+
+
 const getChildrentCategory = async (req, res, next) => {
   
   try {

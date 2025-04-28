@@ -1,7 +1,7 @@
 import { MongoClient } from "mongodb";
 import env from "./env.js";
 
-const client = new MongoClient(env.MONGODB_URI)
+export const client = new MongoClient(env.MONGODB_URI)
 
 let db;
 

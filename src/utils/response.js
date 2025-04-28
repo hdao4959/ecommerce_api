@@ -5,7 +5,7 @@ export const successResponse = (res, { message = "", data = {} } = {}, statusCod
   })
 }
 
-export const errorResponse = (res, {errors = null, message = 'Có lỗi xảy ra'} = {}, statusCode = 500) => {
+export const errorResponse = (res, {errors = null, message = 'Có lỗi xảy ra!'} = {}, statusCode = 500) => {
   return res.status(statusCode).json({
     "errors": errors,
     "message": message

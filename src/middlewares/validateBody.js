@@ -4,7 +4,7 @@ const validateBody = (schema) => (req, res, next) => {
   const { error, value } = schema.validate(req.body, { abortEarly: true })
   
   if (error) {
-    return errorResponse(res, {errors: error} ,500);
+    return errorResponse(res, {errors: error.details} ,500);
   }
 
   req.body = value;

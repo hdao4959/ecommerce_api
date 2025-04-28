@@ -21,4 +21,8 @@ connectDb().then(() => {
   app.listen(env.PORT, () => {
     console.log(`Server is starting on: http://localhost:${env.PORT}`);
   })
-})
+},
+
+
+
+)
