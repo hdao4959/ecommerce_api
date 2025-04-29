@@ -11,11 +11,13 @@ const categoryValidate = Joi.object({
   }),
   parent_id: Joi.any().custom((value, helpers) => {
     if(value === null || value === "" || value === undefined) return null
-    try {
-      return new ObjectId(value)
-    } catch (error) {
-      return helpers().error('parentId.invalid')
+
+    if(!ObjectId.isValid(value)){
+      return helpers.error('parentId.invalid')
     }
+   
+      return new ObjectId(value)
+   
   }).message({
     'parentId.invalid': 'Danh mục cha không hợp lệ'
   }),

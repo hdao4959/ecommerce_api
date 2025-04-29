@@ -9,4 +9,5 @@ categoryRoutes.get('/categories/:id', categoryController.getChildrentCategory);
 categoryRoutes.post('/categories', validateBody(categoryValidate), categoryController.create);
 categoryRoutes.put('/categories/:id', validateBody(categoryValidate), categoryController.update);
 categoryRoutes.delete('/categories/:id', categoryController.destroy);
+categoryRoutes.get('/categories/:id', categoryController.getChildrentCategory);
 export default categoryRoutes

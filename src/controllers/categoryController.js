@@ -51,8 +51,8 @@ const destroy = async (req, res, next) =>{
 const getChildrentCategory = async (req, res, next) => {
   
   try {
-    const result = await Category.getChildrenByIdParent(req.params.id)
-    res.json(result)
+    const result = await categoryService.getChildrentCategory(req.params.id)
+    return successResponse(res, {data: result}, 200);
   } catch (error) {
     next(error)
   }

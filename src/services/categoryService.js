@@ -1,4 +1,5 @@
 import { client } from "../config/mongodb.js";
+import categoryModel from "../models/categoryModel.js";
 import Category from "../models/categoryModel.js"
 import ErrorCustom from "../utils/ErrorCustom.js";
 
@@ -10,7 +11,7 @@ const create = async (data) => {
 
   const exist = await Category.findBy({ name: data?.name });
   if (exist) {
-    throw new ErrorCustom('Tên danh mục đã tồn tại!', 400)
+    throw new ErrorCustom('Tên danh mục đã tồn tại!', 400)  
   }
 
   if (data.parent_id) {
@@ -91,9 +92,14 @@ const destroy = async (id) => {
   }
 }
 
+const getChildrentCategory = async (parentId) => {
+  return await Category.getChildrenByIdParent(parentId);
+}
+
 export default {
   getAll,
   create,
   update,
-  destroy
+  destroy,
+  getChildrentCategory
 }
