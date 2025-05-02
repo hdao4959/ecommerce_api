@@ -1,21 +1,24 @@
-import ProductsModel from "../models/productsModel.js"
+import productService from "../services/productService.js";
+import { successResponse } from "../utils/response.js";
 
-const getAll  =  (req, res) => {
-  res.json('get all products')
-}
-
-const create = async (req, res) => {
+const getAll  = async (req, res, next) => {
   try {
-    
-    await ProductsModel.create(req.body)
-    res.json(req.body)
-    
+    const result = await productService.getAll();
+    return successResponse(res, {data: result}, 200);
   } catch (error) {
-    console.log(error);
-    
+    next(error)
   }
 }
 
+const create = async (req, res, next) => {
+  try {
+    await productService.create(req.body)
+    return successResponse(res, {message: "Thêm mới sản phẩm thành công!"}, 200);
+    
+  }catch (error) {
+    next(error)
+  }
+}
 
 
 export default  {

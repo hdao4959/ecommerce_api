@@ -35,13 +35,8 @@ const update = async (req, res, next) => {
 const destroy = async (req, res, next) =>{
   try {
     const categoryId = req.params.id;
-    const result = await categoryService.destroy(categoryId)
-
-    if(!result.success){
-      return errorResponse(res, {message: result.message}, result.statusCode);
-    }
-
-    return successResponse(res, {message: result.message}, result.statusCode);
+    await categoryService.destroy(categoryId)
+    return successResponse(res, {message: "Xoá danh mục thành công!"}, 200)
   } catch (error) {
     next(error)
   }

@@ -1,12 +1,12 @@
 import { ObjectId } from "bson";
 import { getDb } from "../config/mongodb.js";
-import CategoryValidate from "../validators/categoryValidate.js";
+import { ConvertToObjectId } from "../utils/ConvertToObjectId.js";
 
 const COLLECTION = 'categories'
 
 const collection = () => getDb().collection(COLLECTION);
  
-const toObjectId = (id) => (ObjectId.isValid(id) ? new ObjectId(id) : id)
+
 
 // Lấy tất cả danh mục
 const getAll = async () => {
@@ -15,13 +15,13 @@ const getAll = async () => {
 
 // Lấy 1 danh mục bằng id
 const findById = async (id) => {
-  return await collection().findOne({ _id: toObjectId(id) })
+  return await collection().findOne({ _id: ConvertToObjectId(id) })
 }
 
 // Tìm 1 danh mục theo điều kiện
 const findBy = async (filter) => {
   if(!ObjectId.isValid(filter.id)){
-    filter.id = toObjectId(filter.id);
+    filter.id = ConvertToObjectId(filter.id);
   }
 
   return await collection().findOne(filter)
@@ -45,7 +45,7 @@ const create = async (data, session = undefined) => {
 // Cập nhật danh mục theo id
 const updateById = async (id, data, session = undefined) => {
   return await collection().findOneAndUpdate(
-    { _id: toObjectId(id) },
+    { _id: ConvertToObjectId(id) },
     { $set: data },
     { returnDocument: 'after' },
     {session}
@@ -54,16 +54,16 @@ const updateById = async (id, data, session = undefined) => {
 
 // Xoá danh mục theo id
 const deleteById = async (id, session = undefined) => {
-  return await collection().deleteOne({ _id: toObjectId(id) }, {session})
+  return await collection().deleteOne({ _id: ConvertToObjectId(id) }, {session})
 }
 
 // Danh sách các danh mục con theo id cha
 const getChildrenByIdParent = async (idParent) => {
-  return await collection().find({ parent_id: toObjectId(idParent)}).toArray()
+  return await collection().find({ parent_id: ConvertToObjectId(idParent)}).toArray()
 }
 
 const deleteChildrenByIdParent = async (parentId, session = undefined) => {
-  return await collection().deleteMany({parent_id: toObjectId(parentId)}, {session})
+  return await collection().deleteMany({parent_id: ConvertToObjectId(parentId)}, {session})
 }
 
 export default {
