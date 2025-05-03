@@ -19,12 +19,12 @@ const findById = async (id) => {
 }
 
 // Tìm 1 danh mục theo điều kiện
-const findBy = async (filter) => {
-  if(!ObjectId.isValid(filter.id)){
-    filter.id = ConvertToObjectId(filter.id);
+const findBy = async (payload) => {
+  if(!ObjectId.isValid(payload.id)){
+    payload.id = ConvertToObjectId(payload.id);
   }
 
-  return await collection().findOne(filter)
+  return await collection().findOne(payload)
 }
 
 // Lọc ra danh sách danh mục theo điều kiện

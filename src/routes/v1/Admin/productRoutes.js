@@ -6,5 +6,5 @@ import ProductValidate from '../../../validators/productValidate.js';
 const productRoutes = express.Router();
 productRoutes.get('/', productController.getAll);
 productRoutes.post('/', validateBody(ProductValidate), productController.create);
-
+productRoutes.delete('/:id', productController.destroy);
 export default productRoutes 

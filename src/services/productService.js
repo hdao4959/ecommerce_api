@@ -13,12 +13,24 @@ const create = async (data) => {
   if (!category) {
     throw new ErrorCustom("Danh mục sản phẩm không tồn tại!", 404);
   }
+
+  const existNameProduct = await productModel.findBy({name: data.name})
+  if(existNameProduct){
+    throw new ErrorCustom('Tên sản phẩm đã tồn tại', 409);
+  }
   return await productModel.create(data);
 }
 
-const destroy = (id) => {
-  
+const destroy = async (id) => {
+  if(!id){
+    throw new ErrorCustom('Bạn chưa chuyền id sản phẩm', 404)
+  }
+  const product = await productModel.findById(id);
+  if(!product){
+    throw new ErrorCustom('Sản phẩm không tồn tại!', 404)
+  }
+  return await productModel.destroy(id);
 }
 export default {
-  getAll, create
+  getAll, create, destroy
 }
