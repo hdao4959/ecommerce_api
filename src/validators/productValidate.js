@@ -2,9 +2,8 @@ import Joi from "joi"
 
 const DRAFT  = 'draft'
 const PUBLISHED  = 'published'
-const ARCHIVED  = 'archived'
 
-const ProductValidate = Joi.object({
+const productValidate = Joi.object({
   name: Joi.string().min(3).max(50).required().trim().messages({
     'string.empty': "Tên sản phẩm không được để trống",
     'string.min': "Tên sản phẩm phải ít nhất 3 ký tự",
@@ -15,9 +14,9 @@ const ProductValidate = Joi.object({
     'any.required': "Bạn chưa chọn danh mục sản phẩm",
     'string.empty': "Bạn chưa chọ danh mục sản phẩm"
   }),
-  status: Joi.string().valid(DRAFT, PUBLISHED, ARCHIVED).default(DRAFT),
+  status: Joi.string().valid(DRAFT, PUBLISHED).default(DRAFT),
   created_at: Joi.date().timestamp('javascript').default(() => Date.now()),
   updated_at: Joi.date().timestamp('javascript').default(null),
   deleted_at: Joi.date().timestamp('javascript').default(null),
 })
-export default ProductValidate
+export default productValidate

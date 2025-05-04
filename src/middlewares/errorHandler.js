@@ -1,8 +1,5 @@
 import { errorResponse } from "../utils/response.js"
 
 export const errorHandler   = (err, req, res, next) => {
-  console.log(err);
-  
-  return errorResponse(res, {errors: err.message}, err.statusCode || 500) 
-  
+  return errorResponse(res, {errors: err.message , stack: err.stack }, err.statusCode || 500) 
 }
