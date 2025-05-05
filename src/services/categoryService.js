@@ -50,6 +50,12 @@ const update = async (id, data) => {
   return await Category.updateById(id, data);
 }
 
+const findById = async (id) => {
+  const result =  await categoryModel.findById(id);
+  if(!result) throw new ErrorCustom("Không tìm thấy danh mục sản phẩm");
+  return result
+}
+
 
 const destroy = async (id) => {
   const session = client.startSession()
@@ -91,6 +97,7 @@ export default {
   getAll,
   create,
   update,
+  findById,
   destroy,
   getChildrentCategory
 }

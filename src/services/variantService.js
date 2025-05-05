@@ -25,6 +25,17 @@ const create = async (data) =>{
   return await variantModel.create(data);
 }
 
+const findById = async (id) => {
+  return await variantModel.findById(id);
+}
+const findOneBy = async (payload) => {
+  return await variantModel.findOneBy(payload);
+}
+
+const filter = async (filter) => {
+  return await variantModel.filter(filter);
+}
+
 const destroy = async (id) => {
   const variant = await variantModel.findById(id);
   if(!variant) {
@@ -35,5 +46,5 @@ const destroy = async (id) => {
 }
 
 export default {
-  create, getAll,  destroy
+  create, getAll, findById, findOneBy, filter, destroy
 }

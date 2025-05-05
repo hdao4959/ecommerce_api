@@ -20,9 +20,13 @@ const findOneBy = async (payload) => {
   return await collection().findOne(payload);
 }
 
+const filter = async (filter) => {
+  return await collection().find(filter).toArray()
+}
+
 const destroy = async (id) => {
   return await collection().deleteOne({_id: ConvertToObjectId(id)})
 }
 export default {
-  getAll, create,findById, findOneBy, destroy
+  getAll, create,findById, findOneBy, filter, destroy
 }

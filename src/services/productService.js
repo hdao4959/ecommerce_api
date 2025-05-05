@@ -21,6 +21,10 @@ const create = async (data) => {
   return await productModel.create(data);
 }
 
+const findById = async (id) => {
+  return await productModel.findById(id);
+}
+
 const destroy = async (id) => {
   if(!id){
     throw new ErrorCustom('Bạn chưa chuyền id sản phẩm', 404)
@@ -32,5 +36,5 @@ const destroy = async (id) => {
   return await productModel.destroy(id);
 }
 export default {
-  getAll, create, destroy
+  getAll, create, findById, destroy
 }

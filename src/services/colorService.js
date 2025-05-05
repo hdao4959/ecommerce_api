@@ -20,6 +20,13 @@ const create = async (data) => {
   return await colorModel.create(data);
 }
 
+const findOneBy = async (payload) => {
+  return await colorModel.findOneBy(payload);
+}
+
+const filter = async (payload) => {
+  return await colorModel.filter(payload);
+}
 export default {
-  getAll, create
+  getAll, create, findOneBy, filter
 }
