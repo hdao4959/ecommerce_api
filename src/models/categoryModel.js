@@ -62,6 +62,9 @@ const getChildrenByIdParent = async (idParent) => {
   return await collection().find({ parent_id: ConvertToObjectId(idParent)}).toArray()
 }
 
+const getParentCategory = async(idParent) => {
+  return await collection().findOne({_id: ConvertToObjectId(idParent)})
+}
 const deleteChildrenByIdParent = async (parentId, session = undefined) => {
   return await collection().deleteMany({parent_id: ConvertToObjectId(parentId)}, {session})
 }
@@ -75,5 +78,6 @@ export default {
   updateById,
   deleteById,
   getChildrenByIdParent,
+  getParentCategory,
   deleteChildrenByIdParent
 }

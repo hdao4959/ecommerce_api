@@ -18,6 +18,12 @@ const detail = async(req ,res, next) => {
     const product = await productService.findById(req.params.id);
     const category = await categoryService.findById(product.category_id);
     product.category = category
+    if(product.category.parent_id) {
+      const parent = await categoryService.getParentCategory(product.category.parent_id);
+      if(parent){
+        product.category.parent = parent;
+      }
+    }
     const variants = await variantService.filter({product_id: product._id})
 
     const variantIds = variants.map(variant => variant._id);

@@ -93,11 +93,16 @@ const getChildrentCategory = async (parentId) => {
   }
 }
 
+const getParentCategory = async (idParent) => {
+  return await categoryModel.getParentCategory(idParent);
+}
+
 export default {
   getAll,
   create,
   update,
   findById,
   destroy,
-  getChildrentCategory
+  getChildrentCategory,
+  getParentCategory
 }
