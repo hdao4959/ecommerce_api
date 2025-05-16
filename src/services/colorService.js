@@ -1,5 +1,5 @@
 import colorModel from "../models/colorModel.js"
-import variantModel from "../models/variantModel.js";
+// import variantModel from "../models/variantModel.js";
 import ErrorCustom from "../utils/ErrorCustom.js";
 
 const getAll = async () => {
@@ -8,10 +8,10 @@ const getAll = async () => {
 
 const create = async (data) => {
 
-  const variant = await variantModel.findById(data.variant_id);
-  if (!variant) {
-    throw new ErrorCustom('Biến thể bạn chọn cho màu sắc không tồn tại!', 404);
-  }
+  // const variant = await variantModel.findById(data.variant_id);
+  // if (!variant) {
+  //   throw new ErrorCustom('Biến thể bạn chọn cho màu sắc không tồn tại!', 404);
+  // }
 
   const existColor = await colorModel.findOneBy({ name: data.name, variant_id: data.variant_id });
   if (existColor) {
@@ -27,6 +27,16 @@ const findOneBy = async (payload) => {
 const filter = async (payload) => {
   return await colorModel.filter(payload);
 }
+
+const destroy = async (id) => {
+  console.log(id);
+  
+  const existColor = await colorModel.findOneBy({_id: id})
+  if(!existColor){
+    throw new ErrorCustom('Màu này không tồn tại!', 404);
+  }
+  return await colorModel.destroy(id);
+}
 export default {
-  getAll, create, findOneBy, filter
+  getAll, create, findOneBy, filter, destroy
 }

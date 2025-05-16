@@ -11,14 +11,24 @@ const create = async (data) => {
   data.variant_id &&= ConvertToObjectId(data.variant_id);
   return await collection().insertOne(data);
 }
-
+ 
 const filter = async (payload) => {
   return await collection().find(payload).toArray()
 }
 const findOneBy = async (payload) => {
-  return await collection().findOne(payload);
+  
+  const  query = {... payload};
+  if(query._id){
+    query._id = ConvertToObjectId(query._id);
+  }
+  return await collection().findOne(query);
 }
 
+const destroy = async (id) =>{
+  console.log(id);
+  
+  return await collection().deleteOne({_id: ConvertToObjectId(id)});
+}
 export default {
-  getAll, create, findOneBy, filter
+  getAll, create, findOneBy, filter, destroy
 }

@@ -19,6 +19,15 @@ const create = async (req, res ,next) => {
   }
 }
 
+const destroy = async (req, res, next) => {
+  try {
+    await colorService.destroy(req.params.id);
+    return successResponse(res, {message: 'Xoá màu sắc thành công'}, 200)
+  } catch (error) {
+    next(error)
+  }
+}
+
 export default {
-  getAll, create
+  getAll, create, destroy
 }
