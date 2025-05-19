@@ -1,5 +1,7 @@
 import { getDb } from "../config/mongodb.js"
 import { ConvertToObjectId } from "../utils/ConvertToObjectId.js";
+import ErrorCustom from "../utils/ErrorCustom.js";
+import colorModel from "./colorModel.js";
 const COLLECTION = 'variants'
 const collection = () => getDb().collection(COLLECTION);
 const getAll = async () => {
@@ -12,8 +14,28 @@ const create = async (data) => {
   return await collection().insertOne(data);
 }
 
+const insertMany = async (array, options = {}) => {
+  const colorObjectIds = array.flatMap(variant => variant.colors.map(ConvertToObjectId));
+  const confirmExistColorIds = await colorModel.filter({ _id: { $in: colorObjectIds } }, options)
+
+  if (confirmExistColorIds.length != colorObjectIds.length) {
+    throw new ErrorCustom("Cố màu sắc không tồn tại trong hệ thống")
+  }
+  const newArray = array.map(variant => ({
+    ...variant,
+    colors: variant.colors.map(color => ({
+      _id: ConvertToObjectId(color),
+      stock: 0,
+      price: 0,
+      is_active: false,
+    }))
+  }))
+  return await collection().insertMany(newArray);
+}
+
+
 const findById = async (id) => {
-  return await collection().findOne({_id: ConvertToObjectId(id)});
+  return await collection().findOne({ _id: ConvertToObjectId(id) });
 }
 
 const findOneBy = async (payload) => {
@@ -25,8 +47,8 @@ const filter = async (filter) => {
 }
 
 const destroy = async (id) => {
-  return await collection().deleteOne({_id: ConvertToObjectId(id)})
+  return await collection().deleteOne({ _id: ConvertToObjectId(id) })
 }
 export default {
-  getAll, create,findById, findOneBy, filter, destroy
+  getAll, create, insertMany, findById, findOneBy, filter, destroy
 }

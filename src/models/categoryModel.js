@@ -33,28 +33,28 @@ const filter = async (filter) => {
 }
 
 // Tạo danh mục mới
-const create = async (data, session = undefined) => {
+const create = async (data, options = {}) => {
     
   if (!data.parent_id) {
     data.parent_id = null
   }
   // await CategoryValidate.validateAsync(data);
-  return await collection().insertOne(data, {session})
+  return await collection().insertOne(data, options)
 }
 
 // Cập nhật danh mục theo id
-const updateById = async (id, data, session = undefined) => {
+const updateById = async (id, data, options = {}) => {
   return await collection().findOneAndUpdate(
     { _id: ConvertToObjectId(id) },
     { $set: data },
     { returnDocument: 'after' },
-    {session}
+    options
   )
 }
 
 // Xoá danh mục theo id
-const deleteById = async (id, session = undefined) => {
-  return await collection().deleteOne({ _id: ConvertToObjectId(id) }, {session})
+const deleteById = async (id, options = {}) => {
+  return await collection().deleteOne({ _id: ConvertToObjectId(id) }, options)
 }
 
 // Danh sách các danh mục con theo id cha
@@ -65,8 +65,8 @@ const getChildrenByIdParent = async (idParent) => {
 const getParentCategory = async(idParent) => {
   return await collection().findOne({_id: ConvertToObjectId(idParent)})
 }
-const deleteChildrenByIdParent = async (parentId, session = undefined) => {
-  return await collection().deleteMany({parent_id: ConvertToObjectId(parentId)}, {session})
+const deleteChildrenByIdParent = async (parentId, options = {}) => {
+  return await collection().deleteMany({parent_id: ConvertToObjectId(parentId)}, options)
 }
 
 export default {

@@ -18,11 +18,20 @@ const create = async (data) =>{
   if(data.name){
     const existNameVariant = await variantModel.findOneBy({name: data.name, product_id: ConvertToObjectId(data.product_id)});
     if(existNameVariant){
-      throw new ErrorCustom("Tên biến thể này đã được tạo cho dòng sản phẩm này", 409)
+      throw new ErrorCustom("Tên biến thể đã được tạo cho dòng sản phẩm này rồi", 409)
     }
   }
 
+
   return await variantModel.create(data);
+}
+
+const insertMany = async (array) => {
+  // Chuyển đổi tất cả các id của color thành object id
+  const newArray = array.map(variant => ({
+    ... variant, colors: variant.colors.map(color => ConvertToObjectId(color))
+  }))
+  return await variantModel.insertMany(newArray);
 }
 
 const findById = async (id) => {
@@ -46,5 +55,5 @@ const destroy = async (id) => {
 }
 
 export default {
-  create, getAll, findById, findOneBy, filter, destroy
+  create, getAll, insertMany, findById, findOneBy, filter, destroy
 }

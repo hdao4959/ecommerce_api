@@ -3,7 +3,14 @@ import { successResponse } from "../utils/response.js";
 
 const getAll = async (req, res, next) => {
   try {
-    const result = await colorService.getAll();
+    let result = null;
+    // Chỉ lấy các màu sắc có is_active = true
+    if(req?.query?.active == 1){
+      result = await colorService.getAllActive();
+    }else{
+      result = await colorService.getAll();
+    }
+    
     return successResponse(res, {data: result}, 200)
   } catch (error) {
     next(error)

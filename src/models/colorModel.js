@@ -5,8 +5,13 @@ const COLLECTION = 'colors';
 const collection = () => getDb().collection(COLLECTION);
 
 const getAll = async () => {
-  return await collection().find({}).toArray();
+  return await collection().find({}).sort({_id: -1}).toArray();
 }
+
+const getAllActive = async () => {
+  return await collection().find({is_active: true}).sort({_id: -1}).toArray();
+}
+
 const create = async (data) => {
   data.variant_id &&= ConvertToObjectId(data.variant_id);
   return await collection().insertOne(data);
@@ -16,8 +21,7 @@ const filter = async (payload) => {
   return await collection().find(payload).toArray()
 }
 const findOneBy = async (payload) => {
-  
-  const  query = {... payload};
+  const  query = {...payload};
   if(query._id){
     query._id = ConvertToObjectId(query._id);
   }
@@ -30,5 +34,5 @@ const destroy = async (id) =>{
   return await collection().deleteOne({_id: ConvertToObjectId(id)});
 }
 export default {
-  getAll, create, findOneBy, filter, destroy
+  getAll, getAllActive, create, findOneBy, filter, destroy
 }

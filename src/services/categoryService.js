@@ -58,7 +58,7 @@ const findById = async (id) => {
 
 
 const destroy = async (id) => {
-  const session = client.startSession()
+  const session = await client.startSession()
   try {
     session.startTransaction();
     // Tìm xem category có tồn tại không
@@ -79,17 +79,17 @@ const destroy = async (id) => {
   }
 }
 
-const getChildrentCategory = async (parentId) => {
+const getChildrenCategory = async (parentId) => {
   
   const parentCategory = await Category.findById(parentId);
   if (!parentCategory) {
     throw new ErrorCustom('Danh mục cha không tồn tại!', 404)
   }
-  const childrentCategory = await Category.getChildrenByIdParent(parentId);
+  const childrenCategory = await Category.getChildrenByIdParent(parentId);
 
   return {
     'parentCategory': parentCategory,
-    'childrentCategory': childrentCategory
+    'childrenCategory': childrenCategory
   }
 }
 
@@ -103,6 +103,6 @@ export default {
   update,
   findById,
   destroy,
-  getChildrentCategory,
+  getChildrenCategory,
   getParentCategory
 }

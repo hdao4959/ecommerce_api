@@ -9,11 +9,11 @@ const getAll = async () => {
   return await collection().find({}).toArray();
 }
 
-const create = async (data) => {
+const create = async (data, options = {}) => {
   if(data.category_id){
     data.category_id = ConvertToObjectId(data.category_id)
   }
-  return await collection().insertOne(data)
+  return await collection().insertOne(data, options)
 }
 
 const findById = async (id) => {
