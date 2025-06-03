@@ -1,6 +1,5 @@
 import Joi from "joi"
 
-
 const DRAFT  = 'draft'
 const PUBLISHED  = 'published'
 
@@ -12,7 +11,7 @@ const variantValidate = Joi.object({
     'string.min': 'Tên biến thể tối thiểu 3 kí tự!',
     'string.max': 'Tên biến thể tối đa 20 kí tự!',
   }),
-  product_id: Joi.string().required().trim().messages({
+  product_line_id: Joi.string().required().trim().messages({
     'any.required': 'Bạn chưa chọn dòng sản phẩm cho biến thể!',
     'string.empty': "Dòng sản phẩm không được để trống!"
   }),

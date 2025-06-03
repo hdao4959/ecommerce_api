@@ -3,29 +3,40 @@ import { ConvertToObjectId } from "../utils/ConvertToObjectId.js";
 
 const COLLECTION = 'products'
 
-const collection = () =>  getDb().collection(COLLECTION);
+const collection = () => getDb().collection(COLLECTION);
 
-const getAll = async () => {
-  return await collection().find({}).toArray();
+const getAll = async ({query = {}, projection = {}}) => {
+  
+  return await collection().find(query, { projection }).toArray(); 
 }
 
+
 const create = async (data, options = {}) => {
-  if(data.category_id){
-    data.category_id = ConvertToObjectId(data.category_id)
-  }
+  data.category_id = ConvertToObjectId(data.category_id)
   return await collection().insertOne(data, options)
 }
 
+const update = async (id, data, options = {}) => {
+  const objectId = ConvertToObjectId(id);
+  return await collection().updateOne({ _id: objectId }, { $set: data }, options)
+}
+
+
+
 const findById = async (id) => {
-  return await collection().findOne({_id: ConvertToObjectId(id)})
+  return await collection().findOne({ _id: ConvertToObjectId(id) })
 }
 
 const findBy = async (payload) => {
   return await collection().findOne(payload)
 }
+
+const filter = async (filter) => {
+  return await collection().find(filter).toArray()
+}
 const destroy = async (id) => {
   await collection().deleteOne({ _id: ConvertToObjectId(id) })
 }
 export default {
-  getAll, create, findById, findBy, destroy
+  getAll, create, update, findById, findBy, filter, destroy
 }

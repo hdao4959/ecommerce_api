@@ -1,14 +1,20 @@
-import colorService from "../services/colorService.js";
-import productService from "../services/productService.js";
-import variantService from "../services/variantService.js";
-import { successResponse } from "../utils/response.js";
-import categoryService from "../services/categoryService.js";
-import colorModel from "../models/colorModel.js";
-
+import colorService from "../../services/Admin/colorService.js";
+import productService from "../../services/Admin/productService.js";
+import variantService from "../../services/Admin/variantService.js";
+import { successResponse } from "../../utils/response.js";
+import categoryService from "../../services/Admin/categoryService.js";
+import colorModel from "../../models/colorModel.js";
+import qs from 'qs'
 const getAll = async (req, res, next) => {
+  let query = {};
+  if(req.query.active == 1){
+    query = {
+      is_active: true
+    }
+  }
   try {
-    const result = await productService.getAll();
-    return successResponse(res, { data: result }, 200);
+    const result = await productService.getAll({query});
+    return successResponse(res, { data: {'products': result} }, 200);
   } catch (error) {
     next(error)
   }
@@ -51,8 +57,32 @@ const detail = async (req, res, next) => {
 
 const create = async (req, res, next) => {
   try {
-    await productService.createWithVariants(req.body);
+    await productService.create(req.body);
     return successResponse(res, { message: "Thêm mới sản phẩm thành công!" }, 200);
+  } catch (error) {
+    next(error)
+  }
+}
+
+const update = async (req, res, next) => {
+  try {
+    const body = qs.parse(req.body);
+    // console.log(body);
+    
+    await productService.update(req.params.id, body);
+    // const images = req.files.filter(file => file.fieldname.includes('img'))
+    // console.log(images);
+    return successResponse(res, {message: 'Chỉnh sửa thành công'}, 200);
+  } catch (error) {
+    next(error)
+  }
+}
+
+const updateVariants = async (req, res, next) => {
+  try {
+    // return successResponse(res, {data: req.body.variants[0].colors[0]})
+    console.log(req.files);
+    
   } catch (error) {
     next(error)
   }
@@ -68,5 +98,5 @@ const destroy = async (req, res, next) => {
 }
 
 export default {
-  getAll, create, detail, destroy
+  getAll, create, updateVariants, update, detail, destroy
 }

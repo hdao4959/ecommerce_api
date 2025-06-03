@@ -14,7 +14,8 @@ const productValidate = Joi.object({
     'any.required': "Bạn chưa chọn danh mục sản phẩm",
     'string.empty': "Bạn chưa chọ danh mục sản phẩm"
   }),
-  variants: Joi.array(),
+  child_category_id: Joi.string().trim(),
+  // variants: Joi.array(),
   is_active: Joi.boolean().default(false),
   status: Joi.string().valid(DRAFT, PUBLISHED).default(DRAFT),
   created_at: Joi.date().timestamp('javascript').default(() => Date.now()),

@@ -1,13 +1,13 @@
-import colorModel from "../models/colorModel.js"
+import colorModel from "../../models/colorModel.js"
 // import variantModel from "../models/variantModel.js";
-import ErrorCustom from "../utils/ErrorCustom.js";
+import ErrorCustom from "../../utils/ErrorCustom.js";
 
 const getAll = async () => {
   return await colorModel.getAll();
 }
 
-const getAllActive = async() => {
-  return await colorModel.getAllActive();
+const getAllActive = async (projection = {}) => {
+  return await colorModel.getAllActive({ projection });
 }
 
 const create = async (data) => {
@@ -28,9 +28,9 @@ const filter = async (payload) => {
 
 const destroy = async (id) => {
   console.log(id);
-  
-  const existColor = await colorModel.findOneBy({_id: id})
-  if(!existColor){
+
+  const existColor = await colorModel.findOneBy({ _id: id })
+  if (!existColor) {
     throw new ErrorCustom('Màu này không tồn tại!', 404);
   }
   return await colorModel.destroy(id);

@@ -1,8 +1,8 @@
 import express from 'express';
-import colorController from '../../../controllers/colorController.js';
+import colorController from '../../../controllers/Admin/colorController.js';
 import validateBody from '../../../middlewares/validateBody.js';
 import colorValidate from '../../../validators/colorValidate.js';
-import colorService from '../../../services/colorService.js';
+import colorService from '../../../services/Admin/colorService.js';
 
 const colorRoutes = express.Router();
 

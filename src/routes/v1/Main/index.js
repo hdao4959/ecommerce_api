@@ -1,7 +1,7 @@
 import express from 'express'
 import categoryRoutes from './categoryRoutes.js';
 import productRoutes from './productRoutes.js';
-import mainController from '../../../controllers/mainController.js';
+import mainController from '../../../controllers/Client/mainController.js';
 
 const mainRoutes = express.Router();
 

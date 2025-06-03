@@ -1,8 +1,8 @@
 import { ObjectId } from "mongodb";
-import { client } from "../config/mongodb.js";
-import categoryModel from "../models/categoryModel.js";
-import Category from "../models/categoryModel.js"
-import ErrorCustom from "../utils/ErrorCustom.js";
+import { client } from "../../config/mongodb.js";
+import categoryModel from "../../models/categoryModel.js";
+import Category from "../../models/categoryModel.js"
+import ErrorCustom from "../../utils/ErrorCustom.js";
 
 const getAll = async () => {
   return await Category.getAll();

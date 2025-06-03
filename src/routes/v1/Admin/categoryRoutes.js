@@ -1,5 +1,5 @@
 import express from 'express'
-import categoryController from '../../../controllers/categoryController.js';
+import categoryController from '../../../controllers/Admin/categoryController.js';
 import validateBody from '../../../middlewares/validateBody.js';
 import categoryValidate from '../../../validators/categoryValidate.js';
 

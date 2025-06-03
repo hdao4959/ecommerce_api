@@ -9,7 +9,6 @@ const getAll = async () => {
 }
 
 const create = async (data) => {
-  // Chuyền đổi chuỗi id thành Object Id
   data.product_id &&= ConvertToObjectId(data.product_id);
   return await collection().insertOne(data);
 }
@@ -27,6 +26,7 @@ const insertMany = async (array, options = {}) => {
       _id: ConvertToObjectId(color),
       stock: 0,
       price: 0,
+      img: null,
       is_active: false,
     }))
   }))

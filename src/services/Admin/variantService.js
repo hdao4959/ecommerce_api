@@ -1,13 +1,14 @@
-import productsModel from "../models/productsModel.js";
-import variantModel from "../models/variantModel.js"
-import { ConvertToObjectId } from "../utils/ConvertToObjectId.js";
-import ErrorCustom from "../utils/ErrorCustom.js";
+import productsModel from "../../models/productsModel.js";
+import variantModel from "../../models/variantModel.js"
+import { ConvertToObjectId } from "../../utils/ConvertToObjectId.js";
+import ErrorCustom from "../../utils/ErrorCustom.js";
 
 const getAll = async () => {
   return await variantModel.getAll();
 }
 
 const create = async (data) =>{
+  
   if(data.product_id){
     const product = await productsModel.findById(data.product_id);
     if(!product){
@@ -16,13 +17,11 @@ const create = async (data) =>{
   }
 
   if(data.name){
-    const existNameVariant = await variantModel.findOneBy({name: data.name, product_id: ConvertToObjectId(data.product_id)});
+    const existNameVariant = await variantModel.findOneBy({name: data.name, product_id: data.product_id});
     if(existNameVariant){
       throw new ErrorCustom("Tên biến thể đã được tạo cho dòng sản phẩm này rồi", 409)
     }
   }
-
-
   return await variantModel.create(data);
 }
 

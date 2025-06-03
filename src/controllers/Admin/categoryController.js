@@ -1,5 +1,5 @@
-import categoryService from "../services/categoryService.js"
-import { successResponse } from "../utils/response.js"
+import categoryService from "../../services/Admin/categoryService.js";
+import { successResponse } from "../../utils/response.js"
 
 const getAll = async (req, res, next) => {
   try {

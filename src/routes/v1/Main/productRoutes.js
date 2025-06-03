@@ -1,5 +1,5 @@
 import express from 'express'
-import productController from '../../../controllers/productController.js'
+import productController from '../../../controllers/Admin/productController.js'
 const productRoutes = express.Router();
 
 productRoutes.get('/', productController.getAll)
