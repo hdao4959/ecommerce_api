@@ -4,7 +4,7 @@ import mainRoutes from './Main/index.js'
 
 const Router_V1 = express.Router()
 
+Router_V1.use('/', mainRoutes)
 Router_V1.use('/admin', AdminRouter)
-Router_V1.get('/', mainRoutes)
 
 export default Router_V1

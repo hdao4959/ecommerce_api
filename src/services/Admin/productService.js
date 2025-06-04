@@ -4,12 +4,12 @@ import colorModel from "../../models/colorModel.js";
 import productModel from "../../models/productsModel.js"
 import variantModel from "../../models/variantModel.js";
 import ErrorCustom from "../../utils/ErrorCustom.js";
-const getAll = async ({query = {}, projection = {}}) => {
-  return await productModel.getAll({query: query, projection: projection});
+const getAll = async ({ query = {}, projection = {} }) => {
+  return await productModel.getAll({ query: query, projection: projection });
 }
 const create = async (data) => {
   // Nếu có id danh mục con thì gán id danh mục con thay cho danh mục cha
-  if(data.child_category_id) data.category_id = data.child_category_id;
+  if (data.child_category_id) data.category_id = data.child_category_id;
   delete data.child_category_id;
 
   if (!data.category_id) {
@@ -21,7 +21,7 @@ const create = async (data) => {
     throw new ErrorCustom("Danh mục sản phẩm không tồn tại!", 404);
   }
 
-  const existNameProduct = await productModel.findBy({ name: data.name })
+  const existNameProduct = await productModel.findOneBy({ payload: { name: data.name } })
   if (existNameProduct) {
     throw new ErrorCustom('Tên sản phẩm đã tồn tại', 409);
   }

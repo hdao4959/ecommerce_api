@@ -10,8 +10,8 @@ const insertMany = async (colors) => {
 
 }
 
-const filter = async ({query= {}, projection= {}, limit = 0, sort = {}}) => {
-  return await collection().find(query, {projection}).limit(limit).sort(sort).toArray()
+const filter = async ({filter= {}, projection= {}, limit = 0, sort = {}}) => {
+  return await collection().find(filter, {projection}).limit(limit).sort(sort).toArray()
 }
 
 export default {

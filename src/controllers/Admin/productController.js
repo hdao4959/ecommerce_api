@@ -36,7 +36,9 @@ const detail = async (req, res, next) => {
     // Mảng các id color
     const colorIds = variants.flatMap(variant => variant.colors.map(color => color._id));
     // Tìm các bản ghi color từ mảng id color
-    const colors = await colorModel.filter({_id: {$in: colorIds}})
+    const colors = await colorModel.filter({
+      filter: {_id: {$in: colorIds}
+    }})
 
     // Mảng gồm key là id của màu, name là Tên màu
     const colorsMap = colors.reduce((acc, color) => {

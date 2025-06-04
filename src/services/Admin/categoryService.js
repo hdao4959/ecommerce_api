@@ -9,12 +9,13 @@ const getAll = async () => {
 }
 
 const create = async (data) => {
-
+  
   const exist = await Category.findBy({ name: data?.name });
+
   if (exist) {
     throw new ErrorCustom('Tên danh mục đã tồn tại!', 400)
   }
-
+  
   if (data.parent_id) {
     const existParentCategory = await Category.findById(data.parent_id);
     if (!existParentCategory) {

@@ -1,3 +1,4 @@
+import slugify from "slugify";
 import { getDb } from "../config/mongodb.js"
 import { ConvertToObjectId } from "../utils/ConvertToObjectId.js";
 
@@ -13,6 +14,9 @@ const getAll = async ({query = {}, projection = {}}) => {
 
 const create = async (data, options = {}) => {
   data.category_id = ConvertToObjectId(data.category_id)
+  if(data.name){
+    data.slug = slugify(data.name);
+  }
   return await collection().insertOne(data, options)
 }
 
@@ -27,8 +31,8 @@ const findById = async (id) => {
   return await collection().findOne({ _id: ConvertToObjectId(id) })
 }
 
-const findBy = async (payload) => {
-  return await collection().findOne(payload)
+const findOneBy = async ({payload = {}, projection = {}}) => {
+  return await collection().findOne(payload, {projection})
 }
 
 const filter = async (filter) => {
@@ -38,5 +42,5 @@ const destroy = async (id) => {
   await collection().deleteOne({ _id: ConvertToObjectId(id) })
 }
 export default {
-  getAll, create, update, findById, findBy, filter, destroy
+  getAll, create, update, findById, findOneBy, filter, destroy
 }

@@ -15,12 +15,13 @@ const getAll = async () => {
 
 // Lấy 1 danh mục bằng id
 const findById = async (id) => {
+  
   return await collection().findOne({ _id: ConvertToObjectId(id) })
 }
 
 // Tìm 1 danh mục theo điều kiện
 const findBy = async (payload) => {
-  if(!ObjectId.isValid(payload.id)){
+  if(payload?.id){
     payload.id = ConvertToObjectId(payload.id);
   }
 

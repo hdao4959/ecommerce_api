@@ -15,10 +15,10 @@ const create = async (data) => {
 
 const insertMany = async (array, options = {}) => {
   const colorObjectIds = array.flatMap(variant => variant.colors.map(ConvertToObjectId));
-  const confirmExistColorIds = await colorModel.filter({ _id: { $in: colorObjectIds } }, options)
+  const confirmExistColorIds = await colorModel.filter({ filter: { _id: { $in: colorObjectIds } } }, options)
 
   if (confirmExistColorIds.length != colorObjectIds.length) {
-    throw new ErrorCustom("Cố màu sắc không tồn tại trong hệ thống")
+    throw new ErrorCustom("Có màu sắc không tồn tại trong hệ thống")
   }
   const newArray = array.map(variant => ({
     ...variant,
@@ -42,8 +42,8 @@ const findOneBy = async (payload) => {
   return await collection().findOne(payload);
 }
 
-const filter = async (filter) => {
-  return await collection().find(filter).toArray()
+const filter = async ({ filter = {}, projection = {} }) => {
+  return await collection().find(filter, { projection }).toArray()
 }
 
 const destroy = async (id) => {

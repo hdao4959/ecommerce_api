@@ -17,7 +17,11 @@ const homePage = async (req, res, next) => {
       return acc
     }, {})
 
-    const variants = await variantService.filter({ product_id: { $in: productIds }, is_active: true });
+    const variants = await variantService.filter({
+      filter:  { product_id: { $in: productIds }, is_active: true }
+    }
+     
+    );
     // Mảng gồm các id variant
     const variantIds = variants.map((variant) => variant._id)
     // 1 đối tượng gồm nhiều đối tượng variant, có key là id của từng variant
@@ -41,7 +45,6 @@ const homePage = async (req, res, next) => {
         variants: variants
       }
     })
-
 
     return successResponse(res, {
       data: {

@@ -17,8 +17,9 @@ const create = async (data) => {
   return await collection().insertOne(data);
 }
 
-const filter = async (payload) => {
-  return await collection().find(payload).toArray()
+const filter = async ({filter = {}, projection = {}}) => {
+  
+  return await collection().find(filter, {projection}).toArray()
 }
 const findOneBy = async (payload) => {
   const query = { ...payload };
