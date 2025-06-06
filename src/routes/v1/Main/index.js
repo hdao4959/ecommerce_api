@@ -4,12 +4,12 @@ import productRoutes from './productRoutes.js';
 import mainController from '../../../controllers/Client/mainController.js';
 import productController from '../../../controllers/Client/productController.js';
 
-const mainRoutes = express.Router();
+const MainRoutes = express.Router();
 
-mainRoutes.use('/categories', categoryRoutes)
-mainRoutes.use('/products', productRoutes)
+MainRoutes.use('/categories', categoryRoutes)
+MainRoutes.use('/products', productRoutes)
 
-mainRoutes.get('/', mainController.homePage)
+MainRoutes.get('/', mainController.homePage)
 
 
-export default mainRoutes
+export default MainRoutes

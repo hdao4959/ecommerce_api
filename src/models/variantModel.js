@@ -4,8 +4,8 @@ import ErrorCustom from "../utils/ErrorCustom.js";
 import colorModel from "./colorModel.js";
 const COLLECTION = 'variants'
 const collection = () => getDb().collection(COLLECTION);
-const getAll = async () => {
-  return await collection().find({}).toArray();
+const getAll = async ({query = {}, projection = {}} = {}) => {
+  return await collection().find(query, {projection}).toArray();
 }
 
 const create = async (data) => {

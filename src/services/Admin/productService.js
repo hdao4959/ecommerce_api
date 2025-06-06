@@ -4,7 +4,7 @@ import colorModel from "../../models/colorModel.js";
 import productModel from "../../models/productsModel.js"
 import variantModel from "../../models/variantModel.js";
 import ErrorCustom from "../../utils/ErrorCustom.js";
-const getAll = async ({ query = {}, projection = {} }) => {
+const getAll = async ({ query = {}, projection = {}} = {}) => {
   return await productModel.getAll({ query: query, projection: projection });
 }
 const create = async (data) => {

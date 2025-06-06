@@ -6,7 +6,7 @@ const COLLECTION = 'products'
 
 const collection = () => getDb().collection(COLLECTION);
 
-const getAll = async ({query = {}, projection = {}}) => {
+const getAll = async ({query = {}, projection = {}} = {}) => {
   
   return await collection().find(query, { projection }).toArray(); 
 }

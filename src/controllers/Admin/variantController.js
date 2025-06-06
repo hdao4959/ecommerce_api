@@ -9,10 +9,30 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+
+
 const getAll = async (req, res, next) => {
   try {
-    const result = await productService.getAll();
-    return successResponse(res, { data: result }, 200);
+    const products = await productService.getAll();
+    const productMap = products.reduce((acc, product) => {
+      acc[product._id.toString()] = product;
+      return acc
+    }, {})
+
+    const variants = await variantService.getAll();
+
+    const variantAddProduct = variants.map(variant => {
+      const productId = variant.product_id.toString();
+      return ({
+          ...variant,
+          product: productMap[productId]
+      })
+    })
+    return successResponse(res, {
+      data: {
+        variants: variantAddProduct,
+      }
+    }, 200);
   } catch (error) {
     next(error)
   }

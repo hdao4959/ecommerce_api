@@ -3,8 +3,8 @@ import variantModel from "../../models/variantModel.js"
 import { ConvertToObjectId } from "../../utils/ConvertToObjectId.js";
 import ErrorCustom from "../../utils/ErrorCustom.js";
 
-const getAll = async () => {
-  return await variantModel.getAll();
+const getAll = async ({query = {}, projection = {}} = {}) => {
+  return await variantModel.getAll({query, projection});
 }
 
 const create = async (data) =>{
