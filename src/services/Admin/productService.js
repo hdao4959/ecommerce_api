@@ -32,8 +32,8 @@ const update = async (id, data) => {
   return await productModel.update(id, data)
 }
 
-const filter = async (filter) => {
-  return await productModel.filter(filter);
+const filter = async ({filter = {}, projection = {}}) => {
+  return await productModel.filter({filter, projection});
 }
 
 

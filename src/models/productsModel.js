@@ -35,8 +35,8 @@ const findOneBy = async ({payload = {}, projection = {}}) => {
   return await collection().findOne(payload, {projection})
 }
 
-const filter = async (filter) => {
-  return await collection().find(filter).toArray()
+const filter = async ({filter = {}, projection = {}}) => {
+  return await collection().find(filter, {projection}).toArray()
 }
 const destroy = async (id) => {
   await collection().deleteOne({ _id: ConvertToObjectId(id) })

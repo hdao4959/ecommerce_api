@@ -10,6 +10,7 @@ MainRoutes.use('/categories', categoryRoutes)
 MainRoutes.use('/products', productRoutes)
 
 MainRoutes.get('/', mainController.homePage)
+MainRoutes.post('/cart', mainController.cartPage);
 
 
 export default MainRoutes

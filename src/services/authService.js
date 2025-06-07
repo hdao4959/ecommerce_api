@@ -3,14 +3,26 @@ import userModel from "../models/userModel.js";
 const loginWithGoogle = async (data) => {
   const existAccount = await userModel.findOneBy({
     payload: {
-      google_id: data.googleId
+      googleId: data.sub
     }
   })
-
-  if(!existAccount){
-    return await userModel.create(data);
+  const newData = {
+    ...data,
+    googleId: data.sub
   }
-  return 0
+  delete newData.sub
+// Đã từng đăng nhập bằng google
+  if(!existAccount){
+    delete newData.created_at;
+    return await userModel.create({
+      ...newData,
+      phoneNumber: null,
+      address: null,
+    });
+  }
+  // Chưa từng đăng nhập bằng google
+  return await userModel.update(existAccount._id, newData);
+
 }
 
 export default {

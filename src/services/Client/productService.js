@@ -7,6 +7,10 @@ const getAll = async ({query = {}, projection = {}}) => {
 const findOneBy = async({payload = {}, projection = {}})=> {
   return await productsModel.findOneBy({payload, projection});
 }
+
+const filter = async ({filter = {}, projection = {}}) => {
+  return await productsModel.filter({filter, projection})
+}
 export default {
-  getAll, findOneBy
+  getAll, findOneBy, filter
 }

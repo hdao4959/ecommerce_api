@@ -15,7 +15,12 @@ const findOneBy = async ({payload = {}, projection = {}} = {}) => {
   return await collection().findOne(payload, {projection});
 }
 
+const update = async(id, data, options = {}) => {
+  id = ConvertToObjectId(id);
+  return await collection().updateOne({_id: id}, {$set: data}, options)
+}
+
 
 export default {
-  create, findOneBy
+  create, findOneBy , update
 }
