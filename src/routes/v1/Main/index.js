@@ -11,6 +11,7 @@ MainRoutes.use('/products', productRoutes)
 
 MainRoutes.get('/', mainController.homePage)
 MainRoutes.post('/cart', mainController.cartPage);
+MainRoutes.post('/checkout', mainController.checkoutPage);
 
 
 export default MainRoutes
