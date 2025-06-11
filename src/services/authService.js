@@ -22,7 +22,6 @@ const loginWithGoogle = async (data) => {
   }
   // Chưa từng đăng nhập bằng google
   return await userModel.update(existAccount._id, newData);
-
 }
 
 export default {

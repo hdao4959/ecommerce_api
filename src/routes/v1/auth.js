@@ -5,5 +5,5 @@ import validateBody from '../../middlewares/validateBody.js'
 const AuthRoutes = express.Router()
 
 AuthRoutes.post('/google', validateBody(loginGoogleValidate), authController.loginWithGoogle)
-
+AuthRoutes.post('/account', authController.getAccountByGoogleId)
 export default AuthRoutes

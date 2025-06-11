@@ -12,6 +12,7 @@ MainRoutes.use('/products', productRoutes)
 MainRoutes.get('/', mainController.homePage)
 MainRoutes.post('/cart', mainController.cartPage);
 MainRoutes.post('/checkout', mainController.checkoutPage);
-
+MainRoutes.post('/create_payment_url', mainController.createPaymentUrl);
+MainRoutes.get('/vnpay_ipn', mainController.getVnpIpn);
 
 export default MainRoutes

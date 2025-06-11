@@ -2,14 +2,13 @@ import { OAuth2Client } from "google-auth-library";
 import { errorResponse, successResponse } from "../utils/response.js";
 import env from "../config/env.js";
 import authService from "../services/authService.js";
+import userService from "../services/Client/userService.js";
 
 
 const client = new OAuth2Client(env.GOOGLE_CLIENT_ID);
 
 const loginWithGoogle = async (req, res, next) => {
   const request = req.body;
-  console.log(request.token);
-  
   try {
     const ticket = await client.verifyIdToken({
       idToken: request.token,
@@ -44,6 +43,23 @@ const loginWithGoogle = async (req, res, next) => {
   }
 }
 
+const getAccountByGoogleId = async (req, res, next) => {
+  try {
+    const { googleId } = req.body;
+    const account = await userService.findOneBy({
+      payload: { googleId: googleId },
+      projection: { _id: 0, created_at: 0, updated_at: 0, deleted_at: 0 }
+    })
+    return successResponse(res, {
+      data: {
+        account
+      }
+    }, 200)
+  } catch (error) {
+    next(error)
+  }
+}
+
 export default {
-  loginWithGoogle
+  loginWithGoogle, getAccountByGoogleId
 }

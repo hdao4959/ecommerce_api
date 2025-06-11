@@ -3,7 +3,12 @@ import productService from "../../services/Client/productService.js";
 import variantColorService from "../../services/Client/variantColorService.js";
 import variantService from "../../services/Client/variantService.js";
 import { ConvertToObjectId } from "../../utils/ConvertToObjectId.js";
-import { successResponse } from "../../utils/response.js";
+import { errorResponse, successResponse } from "../../utils/response.js";
+import env from "../../config/env.js";
+import dateFormat from 'dateformat'
+import querystring from 'qs'
+import crypto, { sign } from 'crypto'
+import sortObject from "../../utils/sortObject.js";
 
 const homePage = async (req, res, next) => {
   try {
@@ -93,7 +98,7 @@ const cartPage = async (req, res, next) => {
 
     const colors = await colorService.filter({
       filter: {
-        _id: {$in: colorIds}
+        _id: { $in: colorIds }
       }, projection: {
         created_at: 0, updated_at: 0, deleted_at: 0, status: 0, is_active: 0
       }
@@ -164,7 +169,7 @@ const cartPage = async (req, res, next) => {
         ...v,
         color: colorMap[v.color_id]
       })
-    }) 
+    })
     return successResponse(res, {
       data: {
         items: arrayVariantAddColor
@@ -178,7 +183,7 @@ const cartPage = async (req, res, next) => {
 }
 
 const checkoutPage = async (req, res, next) => {
-   try {
+  try {
     const { cart } = req.body;
     const newCart = JSON.parse(cart);
 
@@ -212,7 +217,7 @@ const checkoutPage = async (req, res, next) => {
 
     const colors = await colorService.filter({
       filter: {
-        _id: {$in: colorIds}
+        _id: { $in: colorIds }
       }, projection: {
         created_at: 0, updated_at: 0, deleted_at: 0, status: 0, is_active: 0
       }
@@ -283,7 +288,7 @@ const checkoutPage = async (req, res, next) => {
         ...v,
         color: colorMap[v.color_id]
       })
-    }) 
+    })
     return successResponse(res, {
       data: {
         items: arrayVariantAddColor
@@ -296,6 +301,103 @@ const checkoutPage = async (req, res, next) => {
   }
 }
 
+const createPaymentUrl = async (req, res, next) => {
+  try {
+    let ipAddr = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress || '127.0.0.1';
+    if (ipAddr === '::1') ipAddr = '127.0.0.1';
+
+    // var ipAddr = req.headers['x-forwarded-for'] ||
+    // req.connection.remoteAddress ||
+    // req.socket.remoteAddress ||
+    // req.connection.socket.remoteAddress;
+
+    var tmnCode = env.TMN_CODE;
+
+    var secretKey = env.SECRET_KEY
+    var vnpUrl = env.VNP_URL
+    var returnUrl = env.VNP_RETURN_URL;
+
+    var date = new Date();
+
+    var createDate = dateFormat(date, 'yyyymmddHHMMss');
+    var orderId = dateFormat(date, 'HHMMss');
+
+    var amount = req.body.amount;
+    var bankCode = req.body.bankCode || '';
+
+    var orderInfo = req.body.orderDescription || 'Thanh toán đơn hàng';
+    var orderType = req.body.orderType || 'other';
+    var locale = req.body.language || 'vn';
+    if (locale === null || locale === '') {
+      locale = 'vn';
+    }
+    var currCode = 'VND';
+    var vnp_Params = {};
+    vnp_Params['vnp_Version'] = '2.1.0';
+    vnp_Params['vnp_Command'] = 'pay';
+    vnp_Params['vnp_TmnCode'] = tmnCode;
+    // vnp_Params['vnp_Merchant'] = ''
+    vnp_Params['vnp_Locale'] = locale;
+    vnp_Params['vnp_CurrCode'] = currCode;
+    vnp_Params['vnp_TxnRef'] = orderId;
+    vnp_Params['vnp_OrderInfo'] = orderInfo;
+    vnp_Params['vnp_OrderType'] = orderType;
+    vnp_Params['vnp_Amount'] = amount * 100;
+    vnp_Params['vnp_ReturnUrl'] = returnUrl;
+    vnp_Params['vnp_IpAddr'] = ipAddr;
+    vnp_Params['vnp_CreateDate'] = createDate;
+    if (bankCode !== null && bankCode !== '') {
+      vnp_Params['vnp_BankCode'] = bankCode;
+    }
+    vnp_Params = sortObject(vnp_Params);
+
+    var signData = querystring.stringify(vnp_Params, { encode: false });
+    var hmac = crypto.createHmac("sha512", secretKey);
+    var secureHash = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex");
+    vnp_Params['vnp_SecureHash'] = secureHash;
+    vnpUrl += '?' + querystring.stringify(vnp_Params, { encode: false });
+
+    return successResponse(res, {
+      data: {
+        vnpUrl: vnpUrl
+      }
+    }, 200)
+
+
+  } catch (error) {
+    next(error)
+  }
+
+}
+
+const getVnpIpn = async(req, res, next) => {
+  try {
+    const vnpay_Params = req.query;
+    var secureHash = vnpay_Params['vnp_SecureHash'];
+    delete vnpay_Params['vnp_SecureHash']
+    delete vnpay_Params['vnp_SecureHashType']
+
+    vnpay_Params = sortObject(vnpay_Params);
+    var secretKey = env.SECRET_KEY;
+    var signData = querystring.stringify(vnpay_Params, {encode: false})
+    var hmac = crypto.createHmac('sha512', secretKey);
+    var signed = hmac.update(new Buffer(signData, 'utf-8')).digest('hex')
+
+    if(secureHash === signed){
+      // xử lí đơn hàng,
+      var orderId = vnpay_Params['vnp_TxnRef'];
+      var rspCode = vnpay_Params['vnp_ResponseCode'];
+      res.status(200).json({RspCode: '00', Message: 'success'})
+    }else{
+       res.status(200).json({RspCode: '97', Message: 'Fail checksum'})
+    }
+    console.log(req.query);
+    
+  } catch (error) {
+    next(error)
+  }
+}
+
 export default {
-  homePage, cartPage, checkoutPage
+  homePage, cartPage, checkoutPage, createPaymentUrl, getVnpIpn
 }
