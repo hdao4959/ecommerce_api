@@ -9,6 +9,11 @@ import dateFormat from 'dateformat'
 import querystring from 'qs'
 import crypto, { sign } from 'crypto'
 import sortObject from "../../utils/sortObject.js";
+import orderService from "../../services/Client/orderService.js";
+import itemService from "../../services/Client/orderItemsService.js";
+import ErrorCustom from "../../utils/ErrorCustom.js";
+import { orderStatus, paymentStatus } from "../../models/orderModel.js";
+// import redis from "../../utils/redis.js";
 
 const homePage = async (req, res, next) => {
   try {
@@ -303,6 +308,120 @@ const checkoutPage = async (req, res, next) => {
 
 const createPaymentUrl = async (req, res, next) => {
   try {
+    const body = req.body
+    const orderCreated = await orderService.create({
+      name: body.name,
+      phonenumber: body.phoneNumber,
+      email: body.email,
+      province: body.province,
+      district: body.district,
+      ward: body.ward,
+      note: body.note,
+      amount: body.amount
+    })
+
+    const itemMap = body.items.reduce((acc, item) => {
+      acc[item._id.toString()] = item
+      return acc
+    }, {})
+
+    let variantColor = [];
+    for (const item of body.items) {
+
+      const varColor = await variantColorService.findOne({
+        payload: {
+          _id: item._id,
+          is_active: true
+        },
+        projection: {
+          is_active: 0
+        }
+      })
+
+
+      if (!varColor) {
+        throw new ErrorCustom('Sản phẩm không tồn tại hoặc đã ngừng bán', 400)
+      }
+      // const redisKey = `reserved-${item._id}`
+      // const reservedQuantity = parseInt(await redis.get(redisKey)) || 0;
+
+      // if(parseInt(varColor.stock) < parseInt(reservedQuantity)){
+      //   throw new ErrorCustom('Sản phẩm không đủ số lượng để bán', 400)
+      // }
+
+      // await redis.incrby(redisKey, item.quantity);  
+      // setTimeout(async () => {
+      //   await redis.decrby(redisKey, item.quantity);
+      // }, 15 * 60 * 1000)
+      variantColor.push(varColor);
+    }
+
+    const colorIds = variantColor.map(varColor => ConvertToObjectId(varColor.color_id));
+    const variantIds = variantColor.map(varColor => ConvertToObjectId(varColor.variant_id));
+
+    const colors = await colorService.filter({
+      filter: {
+        _id: { $in: colorIds }
+      },
+      projection: {
+        created_at: 0, updated_at: 0, deleted_at: 0, is_active: 0, status: 0
+      }
+    })
+
+    const colorMap = colors.reduce((acc, color) => {
+      acc[color._id.toString()] = color.name;
+      return acc
+    }, {})
+
+    let variants = await variantService.filter({
+      filter: {
+        _id: { $in: variantIds }
+      },
+      projection: {
+        is_active: 0
+      }
+    })
+    const productIds = variants.map(v => ConvertToObjectId(v.product_id));
+
+    const products = await productService.filter({
+      filter: {
+        _id: { $in: productIds }
+      }
+    })
+
+    const productMap = products.reduce((acc, product) => {
+      acc[product._id.toString()] = product.name
+      return acc
+    }, {})
+
+    variants = variants.map(variant => ({
+      ...variant,
+      product_name: productMap[variant.product_id.toString()]
+    }))
+
+    const variantMap = variants.reduce((acc, variant) => {
+      acc[variant._id.toString()] = {
+        variant_name: variant.name,
+        product_name: variant.product_name
+      }
+      return acc
+    }, {})
+
+    const itemsOrder = variantColor.map(varColor => (
+      {
+        order_id: orderCreated.insertedId,
+        price: varColor.price,
+        img: varColor.img,
+        quantity: itemMap[varColor._id.toString()].quantity,
+        color: colorMap[varColor.color_id.toString()],
+        ...variantMap[varColor.variant_id.toString()]
+      }
+    ))
+
+    await itemService.insertMany(itemsOrder);
+
+    // await itemService.insertMany()
+
     let ipAddr = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress || '127.0.0.1';
     if (ipAddr === '::1') ipAddr = '127.0.0.1';
 
@@ -321,6 +440,7 @@ const createPaymentUrl = async (req, res, next) => {
 
     var createDate = dateFormat(date, 'yyyymmddHHMMss');
     var orderId = dateFormat(date, 'HHMMss');
+    // var orderId = orderCreated.insertedId
 
     var amount = req.body.amount;
     var bankCode = req.body.bankCode || '';
@@ -363,36 +483,46 @@ const createPaymentUrl = async (req, res, next) => {
       }
     }, 200)
 
-
   } catch (error) {
     next(error)
   }
 
 }
 
-const getVnpIpn = async(req, res, next) => {
+const getVnpIpn = async (req, res, next) => {
   try {
-    const vnpay_Params = req.query;
+    var vnpay_Params = req.query;
     var secureHash = vnpay_Params['vnp_SecureHash'];
     delete vnpay_Params['vnp_SecureHash']
     delete vnpay_Params['vnp_SecureHashType']
 
     vnpay_Params = sortObject(vnpay_Params);
-    var secretKey = env.SECRET_KEY;
-    var signData = querystring.stringify(vnpay_Params, {encode: false})
-    var hmac = crypto.createHmac('sha512', secretKey);
-    var signed = hmac.update(new Buffer(signData, 'utf-8')).digest('hex')
-
-    if(secureHash === signed){
-      // xử lí đơn hàng,
-      var orderId = vnpay_Params['vnp_TxnRef'];
-      var rspCode = vnpay_Params['vnp_ResponseCode'];
-      res.status(200).json({RspCode: '00', Message: 'success'})
-    }else{
-       res.status(200).json({RspCode: '97', Message: 'Fail checksum'})
-    }
-    console.log(req.query);
+    console.log('vnpay_params', vnpay_Params);
     
+    var secretKey = env.SECRET_KEY;
+    var signData = querystring.stringify(vnpay_Params, { encode: false })
+    var hmac = crypto.createHmac('sha512', secretKey);
+    var signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex')
+    
+    console.log("secureHash", secureHash);
+    console.log("signed", signed);
+
+    if (secureHash === signed) {
+
+      // // xử lí đơn hàng,
+      var orderId = vnpay_Params['vnp_TxnRef'];
+      const order = await orderService.findOneAndUpdate(orderId, {
+        payment_status: paymentStatus.SUCCESS
+      })
+      
+      var rspCode = vnpay_Params['vnp_ResponseCode'];
+
+      res.status(200).json({ RspCode: '00', Message: 'success' })
+    } else {
+
+      res.status(200).json({ RspCode: '97', Message: 'Fail checksum' })
+    }
+
   } catch (error) {
     next(error)
   }
