@@ -31,7 +31,14 @@ const create = async (data, options = {}) => {
   }, options);
 }
 
+const getAll = async () => {
+  return await collection().find({}).sort({_id: -1}).toArray();
+}
+
 const findOne = async ({ payload = {}, projection = {} } = {}) => {
+  if(payload._id){
+    payload._id = ConvertToObjectId(payload._id);
+  }
   return await collection().findOne(payload, { projection });
 }
 
@@ -46,5 +53,5 @@ const findOneAndUpdate = async (id, data) => {
   })
 }
 export default {
-  create, findOne, findOneAndUpdate
+  create, getAll, findOne, findOneAndUpdate 
 }
