@@ -14,7 +14,6 @@ import itemService from "../../services/Client/orderItemsService.js";
 import ErrorCustom from "../../utils/ErrorCustom.js";
 import { orderStatus, paymentStatus } from "../../models/orderModel.js";
 import transactionService from "../../services/Client/transactionService.js";
-// import redis from "../../utils/redis.js";
 
 const homePage = async (req, res, next) => {
   try {

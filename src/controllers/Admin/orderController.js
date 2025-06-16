@@ -17,32 +17,30 @@ const getAll = async (req, res, next) => {
 
 const detail = async (req, res, next) => {
   try {
-    const idParam = req.params.id;
-
-    const order = await orderService.findOne({
-      payload: {
-        _id: idParam
-      }
-    })
-    const orderItems = await orderItemsService.filter({
-      filter: {
-        order_id: order._id
-      }
-    })
+    const params = req.params;
+    const order = await orderService.getDetail(params.id)
     return successResponse(res, {
       data: {
-        order: {
-          ...order,
-          orderItems: orderItems
-        }
+        'order': order
       }
     })
-
   } catch (error) {
     next(error)
   }
 }
 
+const changeStatus = async (req, res, next) => {
+  try {
+    const params = req.params
+    const body = req.body
+    console.log(body.status);
+    
+    await orderService.changeStatus(params.id, { status: body.status })
+    return successResponse(res, { message: "Thay đổi trạng thái đơn hàng thành công!" }, 200)
+  } catch (error) {
+    next(error)
+  }
+}
 export default {
-  getAll, detail
+  getAll, detail, changeStatus
 }
