@@ -10,7 +10,7 @@ export const successResponse = (res,
 }
 
 export const errorResponse = (res,
-  { errors = null, message = 'Có lỗi xảy ra!', stack = "" } = {}, statusCode = 500) => {
+  { errors = null, message = 'Lỗi không xác định!', stack = "" } = {}, statusCode = 500) => {
   const response = {
     "success": false,
     "errors": errors,
