@@ -7,9 +7,7 @@ const getDistrictKey = (provinceCode) => {
 }
 
 
-const get = async (provinceCode) => {
-  console.log(provinceCode);
-  
+const getAll = async (provinceCode) => {
   try {
     const cached = await redis.get(getDistrictKey(provinceCode));
     if(cached){
@@ -27,7 +25,6 @@ const get = async (provinceCode) => {
 }
 
 const clearCache = async (provinceCode) => {
-
   try {
     if(!provinceCode){
       throw new ErrorCustom("Bạn chưa cung cấp province code");
@@ -40,5 +37,5 @@ const clearCache = async (provinceCode) => {
 }
 
 export default {
-  get, clearCache
+  getAll, clearCache
 }

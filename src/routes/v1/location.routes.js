@@ -4,4 +4,5 @@ const LocationRoutes = express.Router();
 
 LocationRoutes.get('/provinces', locationController.getProvinces)
 LocationRoutes.get('/districts', locationController.getDistricts)
+LocationRoutes.get('/wards', locationController.getWards);
 export default LocationRoutes

@@ -2,27 +2,27 @@ import ErrorCustom from "../utils/ErrorCustom.js";
 import redis from "./redis.js";
 import axios from "axios";
 
-const PROVINCE_KEY = 'location:provinces';
+const PROVINCES_KEY = 'location:provinces';
 
-const get = async () => {
+const getAll = async () => {
   try {
-  const cached = await redis.get(PROVINCE_KEY);
+  const cached = await redis.get(PROVINCES_KEY);
   if (cached) {
     return JSON.parse(cached)
   }
     const { data } = await axios.get("https://vn-public-apis.fpo.vn/provinces/getAll?limit=-1");
     const provinces = data.data.data;
-    await redis.set(PROVINCE_KEY, JSON.stringify(provinces), "EX", 24 * 3600)
+    await redis.set(PROVINCES_KEY, JSON.stringify(provinces), "EX", 24 * 3600)
     return provinces
   } catch (error) {
-    console.log('Lỗi khi gọi province cache');
+    console.log('Lỗi khi gọi provinces cache');
     throw new ErrorCustom(error)
   }
 }
 
 const clearCache = async () => {
   try {
-    await redis.del(PROVINCE_KEY)
+    await redis.del(PROVINCES_KEY)
   } catch (error) {
     console.log(('Lỗi khi xoá province cache'));
     throw new ErrorCustom(error)
@@ -30,5 +30,5 @@ const clearCache = async () => {
 }
 
 export default {
-  get, clearCache
+  getAll, clearCache
 }
