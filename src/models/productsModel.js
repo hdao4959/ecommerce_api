@@ -6,15 +6,14 @@ const COLLECTION = 'products'
 
 const collection = () => getDb().collection(COLLECTION);
 
-const getAll = async ({query = {}, projection = {}} = {}) => {
-  
-  return await collection().find(query, { projection }).toArray(); 
+const getAll = async ({ query = {}, projection = {} } = {}) => {
+  return await collection().find(query, {projection}).toArray();
 }
 
 
 const create = async (data, options = {}) => {
   data.category_id = ConvertToObjectId(data.category_id)
-  if(data.name){
+  if (data.name) {
     data.slug = slugify(data.name);
   }
   return await collection().insertOne(data, options)
@@ -31,12 +30,12 @@ const findById = async (id) => {
   return await collection().findOne({ _id: ConvertToObjectId(id) })
 }
 
-const findOneBy = async ({payload = {}, projection = {}}) => {
-  return await collection().findOne(payload, {projection})
+const findOneBy = async ({ payload = {}, projection = {} }) => {
+  return await collection().findOne(payload, { projection })
 }
 
-const filter = async ({filter = {}, projection = {}}) => {
-  return await collection().find(filter, {projection}).toArray()
+const filter = async ({ filter = {}, projection = {} }) => {
+  return await collection().find(filter, { projection }).toArray()
 }
 const destroy = async (id) => {
   await collection().deleteOne({ _id: ConvertToObjectId(id) })

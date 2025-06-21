@@ -16,7 +16,7 @@ const loginWithGoogle = async (data) => {
     delete newData.created_at;
     return await userModel.create({
       ...newData,
-      phoneNumber: null,
+      phone_number: null,
       address: null,
     });
   }

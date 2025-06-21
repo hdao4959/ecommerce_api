@@ -4,8 +4,51 @@ import colorModel from "../../models/colorModel.js";
 import productModel from "../../models/productsModel.js"
 import variantModel from "../../models/variantModel.js";
 import ErrorCustom from "../../utils/ErrorCustom.js";
-const getAll = async ({ query = {}, projection = {}} = {}) => {
-  return await productModel.getAll({ query: query, projection: projection });
+const getAll = async ({ query } = {}) => {
+  const filter = [];
+
+
+  if (query && query.active) {
+    // if(query.active == 1){
+    //    filter.push(
+    //       { is_active: false }
+    //     )
+    // }
+    // if(query.active == 0){
+    //    filter.push(
+    //       { is_active: true }
+    //     )
+    // }
+    switch (query.active) {
+      case '1':
+        filter.push(
+          { is_active: true }
+        )
+        break;
+      case '0':
+        filter.push(
+          { is_active: false }
+        )
+    }
+  }
+
+  if (query && query.search) {
+    filter.push(
+      {
+        $or: [
+          {
+            name: { $regex: query.search.trim(), $options: 'i' },
+          }, {
+            slug: { $regex: query.search.trim(), $options: 'i' },
+          }
+        ]
+      }
+    )
+  }
+  console.log(filter);
+
+  const finalQuery = filter.length > 0 ? { $and: filter } : {}
+  return await productModel.getAll({ query: finalQuery });
 }
 const create = async (data) => {
   // Nếu có id danh mục con thì gán id danh mục con thay cho danh mục cha
@@ -32,8 +75,8 @@ const update = async (id, data) => {
   return await productModel.update(id, data)
 }
 
-const filter = async ({filter = {}, projection = {}}) => {
-  return await productModel.filter({filter, projection});
+const filter = async ({ filter = {}, projection = {} }) => {
+  return await productModel.filter({ filter, projection });
 }
 
 

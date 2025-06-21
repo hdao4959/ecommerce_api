@@ -8,19 +8,25 @@ const create = async (data) => {
   return await collection().insertOne(data);
 }
 
-const findOneBy = async ({payload = {}, projection = {}} = {}) => {
-  if(payload.id){
-    payload.id = ConvertToObjectId(payload.id);
-  }
-  return await collection().findOne(payload, {projection});
+const getAll = async ({ query = {}, projection = {} } = {}) => {
+  console.log(query);
+  
+  return await collection().find(query, {projection}).toArray();
 }
 
-const update = async(id, data, options = {}) => {
+const findOneBy = async ({ payload = {}, projection = {} } = {}) => {
+  if (payload.id) {
+    payload.id = ConvertToObjectId(payload.id);
+  }
+  return await collection().findOne(payload, { projection });
+}
+
+const update = async (id, data, options = {}) => {
   id = ConvertToObjectId(id);
-  return await collection().updateOne({_id: id}, {$set: data}, options)
+  return await collection().updateOne({ _id: id }, { $set: data }, options)
 }
 
 
 export default {
-  create, findOneBy , update
+  create, getAll, findOneBy, update
 }

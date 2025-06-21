@@ -6,12 +6,7 @@ import categoryService from "../../services/Admin/categoryService.js";
 import colorModel from "../../models/colorModel.js";
 import qs from 'qs'
 const getAll = async (req, res, next) => {
-  let query = {};
-  if(req.query.active == 1){
-    query = {
-      is_active: true
-    }
-  }
+  const query = req.query;
   try {
     const result = await productService.getAll({query});
     return successResponse(res, { data: {'products': result} }, 200);
