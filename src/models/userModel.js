@@ -8,10 +8,12 @@ const create = async (data) => {
   return await collection().insertOne(data);
 }
 
-const getAll = async ({ query = {}, projection = {} } = {}) => {
-  console.log(query);
-  
-  return await collection().find(query, {projection}).toArray();
+const getAll = async ({ conditions = {}, query = {}, projection = {} }) => {
+  const sortObject = {}
+  sortObject[query?.sortBy || 'created_at'] = query?.orderBy === 'asc' ? 1 : -1
+  const limit = parseInt(query?.limit) || 10
+  const skip = parseInt(query?.offset) || 0;
+  return await collection().find(conditions, { projection }).sort(sortObject).skip(skip).limit(limit).toArray();
 }
 
 const findOneBy = async ({ payload = {}, projection = {} } = {}) => {
@@ -26,7 +28,18 @@ const update = async (id, data, options = {}) => {
   return await collection().updateOne({ _id: id }, { $set: data }, options)
 }
 
+const countAll = async () => {
+  return await collection().countDocuments();
+}
+
+const countFiltered = async (conditions = {}) => {
+  return await collection().countDocuments(conditions)
+}
+
+const destroy = async (id) => {
+  return await collection().deleteOne({_id: ConvertToObjectId(id)});
+}
 
 export default {
-  create, getAll, findOneBy, update
+  create, getAll, findOneBy, update, countAll, countFiltered, destroy
 }

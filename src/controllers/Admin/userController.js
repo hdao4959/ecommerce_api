@@ -3,10 +3,11 @@ import { successResponse } from "../../utils/response.js";
 
 const getAll = async (req, res, next) => {
   try {
-    const users = await userService.getAll(req.query);
+    
+    const response = await userService.getAllWithMetadata(req.query);
     return successResponse(res, {
       data: {
-        users: users
+        ...response
       }
     })
   } catch (error) {
@@ -14,6 +15,9 @@ const getAll = async (req, res, next) => {
   }
 }
 
+// const destroy = async (req, res, next) => {
+
+// }
 export default {
   getAll
 }
