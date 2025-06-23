@@ -47,7 +47,7 @@ const getAccountByGoogleId = async (req, res, next) => {
   try {
     const { googleId } = req.body;
     const account = await userService.findOneBy({
-      payload: { googleId: googleId },
+      payload: { google_id: googleId },
       projection: { _id: 0, created_at: 0, updated_at: 0, deleted_at: 0 }
     })
     return successResponse(res, {

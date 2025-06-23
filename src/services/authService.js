@@ -3,12 +3,12 @@ import userModel from "../models/userModel.js";
 const loginWithGoogle = async (data) => {
   const existAccount = await userModel.findOneBy({
     payload: {
-      googleId: data.sub
+      google_id: data.sub
     }
   })
   const newData = {
     ...data,
-    googleId: data.sub
+    google_id: data.sub
   }
   delete newData.sub
 // Đã từng đăng nhập bằng google

@@ -1,4 +1,5 @@
 import userModel from "../../models/userModel.js"
+import ErrorCustom from "../../utils/ErrorCustom.js";
 
 const getAll = async (query = {}) => {
   
@@ -88,10 +89,26 @@ const getAllWithMetadata = async (query = {}) => {
   }
 }
 
+const create = async (data) => {
+  const existEmail = await userModel.findOneBy({payload: {
+    email: data.email,
+    // Bỏ qua các tài khoản có email đăng nhập bằng google
+    google_id: null
+  }})
+
+  if(existEmail){
+    throw new ErrorCustom('Email này đã được sử dụng', 400);
+  }
+  return await userModel.create(data)
+}
+
 const destroy = async (id) => {
+  if(!id){
+    throw new ErrorCustom('Id người dùng không xác định', 400);
+  }
   return await userModel.destroy(id);
 }
 
 export default {
-  getAll, getAllWithMetadata, destroy
+  getAll, getAllWithMetadata, create, destroy
 }

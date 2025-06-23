@@ -18,7 +18,8 @@ const getAll = async ({ conditions = {}, query = {}, projection = {} }) => {
 
 const findOneBy = async ({ payload = {}, projection = {} } = {}) => {
   if (payload.id) {
-    payload.id = ConvertToObjectId(payload.id);
+    payload._id = ConvertToObjectId(payload.id);
+    delete payload.id
   }
   return await collection().findOne(payload, { projection });
 }
