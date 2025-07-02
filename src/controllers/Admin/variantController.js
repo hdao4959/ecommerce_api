@@ -13,24 +13,10 @@ const __dirname = path.dirname(__filename);
 
 const getAll = async (req, res, next) => {
   try {
-    const products = await productService.getAll();
-    const productMap = products.reduce((acc, product) => {
-      acc[product._id.toString()] = product;
-      return acc
-    }, {})
-
-    const variants = await variantService.getAll();
-
-    const variantAddProduct = variants.map(variant => {
-      const productId = variant.product_id.toString();
-      return ({
-          ...variant,
-          product: productMap[productId]
-      })
-    })
+    const responseVariants = await variantService.getAllWithMetadata(req.query);
     return successResponse(res, {
       data: {
-        variants: variantAddProduct,
+        ...responseVariants,
       }
     }, 200);
   } catch (error) {

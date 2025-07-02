@@ -1,13 +1,12 @@
 import orderService from "../../services/Admin/orderService.js";
-import orderItemsService from "../../services/Client/orderItemsService.js";
 import { successResponse } from "../../utils/response.js";
 
 const getAll = async (req, res, next) => {
   try {
-    const orders = await orderService.getAll();
+    const orderWithMeta = await orderService.getAllWithMetadata(req.query);
     return successResponse(res, {
       data: {
-        orders: orders
+        ...orderWithMeta
       }
     })
   } catch (error) {

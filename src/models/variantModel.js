@@ -4,8 +4,12 @@ import ErrorCustom from "../utils/ErrorCustom.js";
 import colorModel from "./colorModel.js";
 const COLLECTION = 'variants'
 const collection = () => getDb().collection(COLLECTION);
-const getAll = async ({query = {}, projection = {}} = {}) => {
-  return await collection().find(query, {projection}).toArray();
+const getAll = async ({conditions = {}, query = {}, projection = {}} = {}) => {
+  const sortObject = {}
+  sortObject[query?.sortBy || 'created_at'] = query?.orderBy  == 'asc' ? 1 : -1
+  const skip = parseInt(query?.skip) || 0
+  const limit = parseInt(query?.limit) || 10
+  return await collection().find(conditions, {projection}).sort(sortObject).skip(skip).limit(limit).toArray();
 }
 
 const create = async (data) => {
@@ -49,6 +53,14 @@ const filter = async ({ filter = {}, projection = {} }) => {
 const destroy = async (id) => {
   return await collection().deleteOne({ _id: ConvertToObjectId(id) })
 }
+
+const countAll = async () => {
+  return await collection().countDocuments();
+}
+
+const countFiltered = async (conditions) => {
+  return await collection().countDocuments(conditions)
+}
 export default {
-  getAll, create, insertMany, findById, findOneBy, filter, destroy
+  getAll, create, insertMany, findById, findOneBy, filter, destroy, countAll, countFiltered
 }

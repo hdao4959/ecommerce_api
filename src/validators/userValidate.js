@@ -18,6 +18,16 @@ const userValidate = Joi.object({
     'any.required': 'Bạn chưa nhập Số điện thoại',
     'string.pattern.base': 'Số điện thoại không hợp lệ'
   }),
+  password: Joi.string().min(6).trim().required().messages({
+    'string.empty': 'Mật khẩu không được để trống',
+    'any.required': 'Bạn chưa nhập mật khẩu',
+    'string.min': 'Mật khẩu phải chứa tối thiểu 6 ký tự'
+  }),
+  confirm_password: Joi.string().valid(Joi.ref('password')).required().messages({
+    'any.only': 'Mật khẩu xác nhận không đúng',
+    'string.empty': 'Mật khẩu không được để trống',
+    'any.required': 'Bạn chưa nhập mật khẩu',
+  }),
   province: Joi.number().default(null).messages({
     'number.base': "Mã tỉnh không hợp lệ"
   }),

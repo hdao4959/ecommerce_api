@@ -6,10 +6,9 @@ import categoryService from "../../services/Admin/categoryService.js";
 import colorModel from "../../models/colorModel.js";
 import qs from 'qs'
 const getAll = async (req, res, next) => {
-  const query = req.query;
   try {
-    const result = await productService.getAll({query});
-    return successResponse(res, { data: {'products': result} }, 200);
+    const result = await productService.getAllWithMetadata(req.query);
+    return successResponse(res, { data: result }, 200);
   } catch (error) {
     next(error)
   }
@@ -32,8 +31,10 @@ const detail = async (req, res, next) => {
     const colorIds = variants.flatMap(variant => variant.colors.map(color => color._id));
     // Tìm các bản ghi color từ mảng id color
     const colors = await colorModel.filter({
-      filter: {_id: {$in: colorIds}
-    }})
+      filter: {
+        _id: { $in: colorIds }
+      }
+    })
 
     // Mảng gồm key là id của màu, name là Tên màu
     const colorsMap = colors.reduce((acc, color) => {
@@ -41,9 +42,11 @@ const detail = async (req, res, next) => {
       return acc
     }, {});
     // Thêm tên color vào danh sách color trong các biến thể
-    const addColorToVariants = variants.map(variant => ({...variant, colors: variant.colors.map(color => ({
-      ... color, name: colorsMap[color._id]
-    }))}))
+    const addColorToVariants = variants.map(variant => ({
+      ...variant, colors: variant.colors.map(color => ({
+        ...color, name: colorsMap[color._id]
+      }))
+    }))
 
     product.variants = addColorToVariants;
     return successResponse(res, { data: product }, 200)
@@ -65,11 +68,11 @@ const update = async (req, res, next) => {
   try {
     const body = qs.parse(req.body);
     // console.log(body);
-    
+
     await productService.update(req.params.id, body);
     // const images = req.files.filter(file => file.fieldname.includes('img'))
     // console.log(images);
-    return successResponse(res, {message: 'Chỉnh sửa thành công'}, 200);
+    return successResponse(res, { message: 'Chỉnh sửa thành công' }, 200);
   } catch (error) {
     next(error)
   }
@@ -79,7 +82,7 @@ const updateVariants = async (req, res, next) => {
   try {
     // return successResponse(res, {data: req.body.variants[0].colors[0]})
     console.log(req.files);
-    
+
   } catch (error) {
     next(error)
   }

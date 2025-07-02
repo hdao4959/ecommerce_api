@@ -31,12 +31,16 @@ const create = async (data, options = {}) => {
   }, options);
 }
 
-const getAll = async () => {
-  return await collection().find({}).sort({_id: -1}).toArray();
+const getAll = async ({ conditions = {}, query = {}, projection = {} }) => {
+  const sortObject = {}
+  sortObject[query?.sortBy || 'created_at'] = query?.orderBy === 'asc' ? 1 : -1
+  const limit = parseInt(query?.limit) || 10
+  const skip = parseInt(query?.offset) || 0;
+  return await collection().find(conditions, {projection}).sort(sortObject).skip(skip).limit(limit).toArray();
 }
 
 const findOne = async ({ payload = {}, projection = {} } = {}) => {
-  if(payload._id){
+  if (payload._id) {
     payload._id = ConvertToObjectId(payload._id);
   }
   return await collection().findOne(payload, { projection });
@@ -48,10 +52,18 @@ const findOneAndUpdate = async (id, data) => {
     {
       $set: data
     },
-  {
-    returnDocument: 'after'
-  })
+    {
+      returnDocument: 'after'
+    })
+}
+
+const countAll = () => {
+  return collection().countDocuments();
+}
+
+const countFiltered = (condition = {}) => {
+  return collection().countDocuments(condition)
 }
 export default {
-  create, getAll, findOne, findOneAndUpdate 
+  create, getAll, findOne, findOneAndUpdate, countAll, countFiltered
 }

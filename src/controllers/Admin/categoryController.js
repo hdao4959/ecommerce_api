@@ -3,7 +3,9 @@ import { successResponse } from "../../utils/response.js"
 
 const getAll = async (req, res, next) => {
   try {
-    const result = await categoryService.getAll()
+    console.log(req.query);
+    
+    const result = await categoryService.getAllWithMetadata(req.query)
     return successResponse(res, { data: result }, 200);
   } catch (error) {
     next(error)

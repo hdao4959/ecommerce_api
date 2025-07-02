@@ -1,16 +1,19 @@
-import { ObjectId } from "bson";
 import { getDb } from "../config/mongodb.js";
 import { ConvertToObjectId } from "../utils/ConvertToObjectId.js";
 
 const COLLECTION = 'categories'
 
 const collection = () => getDb().collection(COLLECTION);
- 
-
 
 // Lấy tất cả danh mục
-const getAll = async () => {
-  return await collection().find({ parent_id: null }).sort({_id: -1}).toArray()
+const getAll = async ({conditions = {}, query = {}, projection = {}}) => {
+  
+  const sortObject = {};
+  sortObject[query?.sortBy ||  'created_at'] = query?.orderBy === 'asc' ? 1 : -1
+  const limit = parseInt(query?.limit) || 10;
+  const skip = parseInt(query?.offset) || 0
+  console.log(sortObject);
+  return await collection().find(conditions, {projection}).sort(sortObject).skip(skip).limit(limit).toArray()
 }
 
 // Lấy 1 danh mục bằng id
@@ -58,6 +61,13 @@ const deleteById = async (id, options = {}) => {
   return await collection().deleteOne({ _id: ConvertToObjectId(id) }, options)
 }
 
+const countAll = async () => {
+  return await collection().countDocuments();
+}
+
+const countFiltered = async (conditions) => {
+  return await collection().countDocuments(conditions)
+}
 // Danh sách các danh mục con theo id cha
 const getChildrenByIdParent = async (idParent) => {
   return await collection().find({ parent_id: ConvertToObjectId(idParent)}).toArray()
@@ -78,6 +88,8 @@ export default {
   filter,
   updateById,
   deleteById,
+  countAll, 
+  countFiltered,
   getChildrenByIdParent,
   getParentCategory,
   deleteChildrenByIdParent

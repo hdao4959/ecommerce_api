@@ -1,8 +1,9 @@
 import userModel from "../../models/userModel.js"
 import ErrorCustom from "../../utils/ErrorCustom.js";
+import hash from "../../utils/hash.js";
 
 const getAll = async (query = {}) => {
-  
+
   let conditions = [];
   if (query && query.active) {
     switch (query.active) {
@@ -56,30 +57,22 @@ const getAllWithMetadata = async (query = {}) => {
     }
   }
   if (query.search) {
+    const searchFields = ['name', 'email', 'phone_number', 'address']
+    const searchRegex = { $regex: query.search.trim(), $options: 'i' }
     conditions.push({
-      $or: [
-
+      $or: searchFields.map(field => (
         {
-          name: { $regex: query.search.trim(), $options: 'i' }
-        },
-        {
-          email: { $regex: query.search.trim(), $options: 'i' }
-        },
-        {
-          phone_number: { $regex: query.search.trim(), $options: 'i' }
-        },
-        {
-          address: { $regex: query.search.trim(), $options: 'i' }
-        },
-      ]
+          [field]: searchRegex
+        }
+      ))
     })
   }
 
   conditions = conditions.length > 0 ? { $and: conditions } : {}
-  const users =  await userModel.getAll({ conditions, query });
+  const users = await userModel.getAll({ conditions, query });
   const total = await userModel.countAll();
   const totalFiltered = await userModel.countFiltered(conditions)
-  
+
   return {
     items: users,
     meta: {
@@ -90,20 +83,25 @@ const getAllWithMetadata = async (query = {}) => {
 }
 
 const create = async (data) => {
-  const existEmail = await userModel.findOneBy({payload: {
-    email: data.email,
-    // Bỏ qua các tài khoản có email đăng nhập bằng google
-    google_id: null
-  }})
+  const existEmail = await userModel.findOneBy({
+    payload: {
+      email: data.email,
+      // Bỏ qua các tài khoản có email đăng nhập bằng google
+      google_id: null
+    }
+  })
 
-  if(existEmail){
+  if (existEmail) {
     throw new ErrorCustom('Email này đã được sử dụng', 400);
   }
+
+  data.password = await hash.hashPassword(data.password)
+  delete data.confirm_password;
   return await userModel.create(data)
 }
 
 const destroy = async (id) => {
-  if(!id){
+  if (!id) {
     throw new ErrorCustom('Id người dùng không xác định', 400);
   }
   return await userModel.destroy(id);

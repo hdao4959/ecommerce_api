@@ -3,7 +3,6 @@ import { successResponse } from "../../utils/response.js";
 
 const getAll = async (req, res, next) => {
   try {
-    
     const response = await userService.getAllWithMetadata(req.query);
     return successResponse(res, {
       data: {

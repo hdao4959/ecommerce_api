@@ -9,16 +9,7 @@ const getAll = async ({ query } = {}) => {
 
 
   if (query && query.active) {
-    // if(query.active == 1){
-    //    filter.push(
-    //       { is_active: false }
-    //     )
-    // }
-    // if(query.active == 0){
-    //    filter.push(
-    //       { is_active: true }
-    //     )
-    // }
+
     switch (query.active) {
       case '1':
         filter.push(
@@ -49,6 +40,45 @@ const getAll = async ({ query } = {}) => {
 
   const finalQuery = filter.length > 0 ? { $and: filter } : {}
   return await productModel.getAll({ query: finalQuery });
+}
+
+const getAllWithMetadata = async (query) => {
+  let conditions = []
+  if (query?.active) {
+    switch (query.active) {
+      case 1:
+        conditions.push(
+          { is_active: true }
+        )
+        break;
+      case 0:
+        conditions.push(
+          { is_active: false }
+        )
+    }
+  }
+
+  if(query?.search){
+    conditions.push({
+      $or: [
+        {
+          name: { $regex: query.search.trim(), $options: 'i'}
+        }
+      ]
+    })
+  }
+
+  conditions = conditions.length > 0 ? { $and: conditions} : {}
+  const products = await productModel.getAll({conditions, query})
+  const total = await productModel.countAll();
+  const totalFiltered = await productModel.countFiltered(conditions)
+  return {
+    items: products,
+    meta: {
+      total,
+      totalFiltered
+    }
+  }
 }
 const create = async (data) => {
   // Nếu có id danh mục con thì gán id danh mục con thay cho danh mục cha
@@ -95,5 +125,5 @@ const destroy = async (id) => {
   return await productModel.destroy(id);
 }
 export default {
-  getAll, create, update, findById, filter, destroy
+  getAll, getAllWithMetadata, create, update, findById, filter, destroy
 }
