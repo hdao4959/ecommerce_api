@@ -1,6 +1,8 @@
 import { client } from "../../config/mongodb.js";
 import categoryModel from "../../models/categoryModel.js";
 import Category from "../../models/categoryModel.js"
+import productsModel from "../../models/productsModel.js";
+import { ConvertToObjectId } from "../../utils/ConvertToObjectId.js";
 import ErrorCustom from "../../utils/ErrorCustom.js";
 
 const getAll = async () => {
@@ -8,7 +10,9 @@ const getAll = async () => {
 }
 
 const getAllWithMetadata = async (query = {}) => {
-  let conditions = []
+  let conditions = [{
+    parent_id: null
+  }]
   if (query && query.active) {
     switch (query.active) {
       case 1:
@@ -35,7 +39,32 @@ const getAllWithMetadata = async (query = {}) => {
   }
 
   conditions = conditions.length > 0 ? { $and: conditions } : {}
-  const categories = await categoryModel.getAll({ conditions, query })
+  const parentCategories = await categoryModel.getAll({ conditions, query })
+
+  const seenParentIds = new Set()
+  const parentIds = []
+
+  parentCategories.forEach(parent => {
+    const stringParentId = parent._id.toString();
+    if (!seenParentIds.has(stringParentId)) {
+      seenParentIds.add(stringParentId);
+      parentIds.push(ConvertToObjectId(stringParentId));
+    }
+  })
+
+  const childrenCategory = await categoryModel.filter({
+    parent_id: { $in: parentIds }
+  })
+  console.log('childrenCategory', childrenCategory);
+  
+  const categories = parentCategories.map(parent => {
+    const childrenOfParent = childrenCategory.filter(child => child.parent_id.toString() == parent._id.toString())
+    return {
+      ...parent,
+      children: childrenOfParent
+    }
+  })
+  
   const total = await categoryModel.countAll();
   const totalFiltered = await categoryModel.countFiltered(query)
   return {
@@ -106,7 +135,7 @@ const destroy = async (id) => {
       throw new ErrorCustom('Danh mục không tồn tại!', 404);
     }
 
-    if(category?.type == 'not_delete'){
+    if (category?.type == 'not_delete') {
       throw new ErrorCustom('Danh mục này không thể xoá!', 419)
     }
     // Xoá các danh mục con
@@ -120,6 +149,14 @@ const destroy = async (id) => {
   } finally {
     session.endSession()
   }
+}
+
+const getDetail = async (id) => {
+  if(!id) return null
+
+  const products = await productsModel.filter({
+    category_id: ConvertToObjectId(id)
+  })
 }
 
 const getChildrenCategory = async (parentId) => {
@@ -145,6 +182,7 @@ export default {
   getAllWithMetadata,
   create,
   update,
+  getDetail,
   findById,
   destroy,
   getChildrenCategory,

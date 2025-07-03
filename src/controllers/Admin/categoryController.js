@@ -42,10 +42,9 @@ const destroy = async (req, res, next) => {
 }
 
 
-const getChildrenCategory = async (req, res, next) => {
-
+const getDetail = async (req, res, next) => {
   try {
-    const result = await categoryService.getChildrenCategory(req.params.id)
+    const result = await categoryService.getDetail(req.params.id)
     return successResponse(res, { data: result }, 200);
   } catch (error) {
     next(error)
@@ -66,6 +65,6 @@ export default {
   create, 
   update, 
   destroy, 
-  getChildrenCategory,
+  getDetail,
   getParentCategory
 } 

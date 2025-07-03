@@ -12,7 +12,6 @@ const getAll = async ({conditions = {}, query = {}, projection = {}}) => {
   sortObject[query?.sortBy ||  'created_at'] = query?.orderBy === 'asc' ? 1 : -1
   const limit = parseInt(query?.limit) || 10;
   const skip = parseInt(query?.offset) || 0
-  console.log(sortObject);
   return await collection().find(conditions, {projection}).sort(sortObject).skip(skip).limit(limit).toArray()
 }
 
@@ -33,6 +32,7 @@ const findBy = async (payload) => {
 
 // Lọc ra danh sách danh mục theo điều kiện
 const filter = async (filter) => {
+  
   return await collection().find(filter).toArray()
 }
 
