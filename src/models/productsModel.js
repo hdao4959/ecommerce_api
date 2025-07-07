@@ -6,12 +6,12 @@ const COLLECTION = 'products'
 
 const collection = () => getDb().collection(COLLECTION);
 
-const getAll = async ({conditions = {}, query = {}, projection = {} } = {}) => {
+const getAll = async ({ conditions = {}, query = {}, projection = {} } = {}) => {
   const sortObject = {}
   sortObject[query?.sortBy || 'created_at'] = query?.orderBy == 'asc' ? 1 : -1
   const limit = parseInt(query?.limit) || 10;
   const skip = parseInt(query?.offset) || 0
-  return await collection().find(conditions, {projection}).sort(sortObject).skip(skip).limit(limit).toArray();
+  return await collection().find(conditions, { projection }).sort(sortObject).skip(skip).limit(limit).toArray();
 }
 
 
@@ -52,6 +52,50 @@ const countAll = async () => {
 const countFiltered = async (conditions) => {
   return await collection().countDocuments(conditions)
 }
+
+const join = async ({ from, localField, foreignField, as, letVars = {}, matchExpr = {}, projectMainCollection = {}, projectForeignCollection = {} }) => {
+  const stages = [];
+  if (!localField || !foreignField) {
+    const pipeline = [];
+
+    if (matchExpr && Object.keys(matchExpr).length > 0) {
+      pipeline.push({
+        $match: {
+          $expr: matchExpr
+        }
+      })
+    }
+
+    if (projectForeignCollection && Object.keys(projectForeignCollection).length > 0) {
+      pipeline.push({
+        $project: projectForeignCollection
+      })
+    }
+
+    stages.push({
+      $lookup: {
+        from,
+        let: letVars,
+        pipeline,
+        as,
+      }
+    })
+  } else {
+    stages.push({
+      $lookup: {
+        from, localField, foreignField, as
+      }
+    })
+  }
+  
+  if (projectMainCollection && Object.keys(projectMainCollection).length > 0) {
+    stages.push({
+      $project: projectMainCollection
+    })
+  }
+
+  return await collection().aggregate(stages).toArray()
+}
 export default {
-  getAll, create, update, findById, findOneBy, filter, destroy, countAll, countFiltered
+  getAll, create, update, findById, findOneBy, filter, destroy, countAll, countFiltered, join
 }

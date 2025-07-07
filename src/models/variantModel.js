@@ -61,6 +61,21 @@ const countAll = async () => {
 const countFiltered = async (conditions) => {
   return await collection().countDocuments(conditions)
 }
+
+const join = async ({from, localField, foreignField, as}) => {
+  
+  
+  return await collection().aggregate([
+    {
+      $lookup: {
+        from,
+        localField,
+        foreignField,
+        as
+      }
+    }
+  ]).toArray()
+}
 export default {
-  getAll, create, insertMany, findById, findOneBy, filter, destroy, countAll, countFiltered
+  getAll, create, insertMany, findById, findOneBy, filter, destroy, countAll, countFiltered, join
 }
