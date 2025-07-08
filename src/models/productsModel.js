@@ -53,47 +53,7 @@ const countFiltered = async (conditions) => {
   return await collection().countDocuments(conditions)
 }
 
-const join = async ({ from, localField, foreignField, as, letVars = {}, matchExpr = {}, projectMainCollection = {}, projectForeignCollection = {} }) => {
-  const stages = [];
-  if (!localField || !foreignField) {
-    const pipeline = [];
-
-    if (matchExpr && Object.keys(matchExpr).length > 0) {
-      pipeline.push({
-        $match: {
-          $expr: matchExpr
-        }
-      })
-    }
-
-    if (projectForeignCollection && Object.keys(projectForeignCollection).length > 0) {
-      pipeline.push({
-        $project: projectForeignCollection
-      })
-    }
-
-    stages.push({
-      $lookup: {
-        from,
-        let: letVars,
-        pipeline,
-        as,
-      }
-    })
-  } else {
-    stages.push({
-      $lookup: {
-        from, localField, foreignField, as
-      }
-    })
-  }
-  
-  if (projectMainCollection && Object.keys(projectMainCollection).length > 0) {
-    stages.push({
-      $project: projectMainCollection
-    })
-  }
-
+const join = async (stages = []) => {
   return await collection().aggregate(stages).toArray()
 }
 export default {

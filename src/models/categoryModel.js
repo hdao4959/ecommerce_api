@@ -81,6 +81,7 @@ const deleteChildrenByIdParent = async (parentId, options = {}) => {
 }
 
 export default {
+  COLLECTION, 
   findBy,
   create,
   getAll,

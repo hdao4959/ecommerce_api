@@ -25,5 +25,5 @@ const findOne = async ({payload = {}, projection = {}} = {}) => {
 }
 
 export default {
-  insertMany, filter, findOne
+  COLLECTION, insertMany, filter, findOne
 }

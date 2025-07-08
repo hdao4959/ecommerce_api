@@ -2,7 +2,9 @@ import { client } from "../../config/mongodb.js";
 import categoryModel from "../../models/categoryModel.js";
 import colorModel from "../../models/colorModel.js";
 import productModel from "../../models/productsModel.js"
+import variantColorModel from "../../models/variantColorModel.js";
 import variantModel from "../../models/variantModel.js";
+import { ConvertToObjectId } from "../../utils/ConvertToObjectId.js";
 import ErrorCustom from "../../utils/ErrorCustom.js";
 const getAll = async ({ query } = {}) => {
   const filter = [];
@@ -58,18 +60,18 @@ const getAllWithMetadata = async (query) => {
     }
   }
 
-  if(query?.search){
+  if (query?.search) {
     conditions.push({
       $or: [
         {
-          name: { $regex: query.search.trim(), $options: 'i'}
+          name: { $regex: query.search.trim(), $options: 'i' }
         }
       ]
     })
   }
 
-  conditions = conditions.length > 0 ? { $and: conditions} : {}
-  const products = await productModel.getAll({conditions, query})
+  conditions = conditions.length > 0 ? { $and: conditions } : {}
+  const products = await productModel.getAll({ conditions, query })
   const total = await productModel.countAll();
   const totalFiltered = await productModel.countFiltered(conditions)
   return {
@@ -80,6 +82,7 @@ const getAllWithMetadata = async (query) => {
     }
   }
 }
+
 const create = async (data) => {
   // Nếu có id danh mục con thì gán id danh mục con thay cho danh mục cha
   if (data.child_category_id) data.category_id = data.child_category_id;
@@ -105,6 +108,94 @@ const update = async (id, data) => {
   return await productModel.update(id, data)
 }
 
+const getDetail = async (id) => {
+  const product = await productModel.join([
+    {
+      $match: {
+        $expr: {
+          $eq: ['$_id', ConvertToObjectId(id)]
+        }
+      }
+    }, {
+      $lookup: {
+        from: categoryModel.COLLECTION,
+        let: {
+          categoryId: "$category_id"
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $eq: ['$_id', '$$categoryId']
+              }
+            }
+          },
+          {
+            $lookup: {
+              from: categoryModel.COLLECTION,
+              localField: 'parent_id',
+              foreignField: '_id',
+              as: 'parent',
+            }
+          }
+        ],
+        as: 'category'
+      }
+    }, {
+      $unwind: '$category'
+    }
+  ])
+  const variants = await variantModel.join([
+    {
+      $match: {
+        $expr: {
+          $eq: ["$product_id", ConvertToObjectId(id)]
+        }
+      }
+    },
+    {
+      $lookup: {
+        from: variantColorModel.COLLECTION,
+        localField: '_id',
+        foreignField: 'variant_id',
+        as: 'variantColor'
+      }
+    }, {
+      $unwind: '$variantColor'
+    }
+  ])
+
+  const seenColorIds = new Set();
+  const colorIds = [];
+  variants.forEach(variant => {
+    const colorId = variant.variantColor.color_id.toString()
+    if (!seenColorIds.has(colorId)) {
+      seenColorIds.add(colorId)
+      colorIds.push(ConvertToObjectId(colorId))
+    }
+  })
+
+
+  const colors = await colorModel.filter({
+    filter: {
+      _id: {
+        $in: colorIds
+      }
+    }
+  })
+
+  const colorMap = colors.reduce((acc, color) => {
+    acc[color._id.toString()] = color.name
+    return acc
+  }, {})
+
+  return {
+    product: product[0],
+    variants,
+    colorMap
+  }
+}
+
 const filter = async ({ filter = {}, projection = {} }) => {
   return await productModel.filter({ filter, projection });
 }
@@ -125,5 +216,5 @@ const destroy = async (id) => {
   return await productModel.destroy(id);
 }
 export default {
-  getAll, getAllWithMetadata, create, update, findById, filter, destroy
+  getAll, getAllWithMetadata, getDetail, create, update, findById, filter, destroy
 }

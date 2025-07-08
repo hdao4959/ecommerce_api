@@ -44,7 +44,7 @@ const destroy = async (req, res, next) => {
 
 const getDetail = async (req, res, next) => {
   try {
-    const result = await categoryService.getDetail(req.params.id)
+    const result = await categoryService.getDetail(req.query, req.params.id)
     return successResponse(res, { data: result }, 200);
   } catch (error) {
     next(error)

@@ -153,79 +153,65 @@ const destroy = async (id) => {
   }
 }
 
-const getDetail = async (id) => {
+const getDetail = async (query, id) => {
   if (!id) return null
+  const category = await categoryModel.findById(ConvertToObjectId(id));
+  if(!category) throw new ErrorCustom('Danh mục này không tồn tại', 404);
 
-  // const products = await productsModel.filter({
-  //   category_id: ConvertToObjectId(id)
-  // })
+  const products = await productsModel.join(
+    [
+      {
+        $lookup: {
+          from: 'variants',
+          let: {
+            productId: '$_id'
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: ['$product_id', '$$productId'],
+                }
+              }
+            },
+            {
+              $lookup: {
+                from: 'variant_color',
+                localField: '_id',
+                foreignField: 'variant_id',
+                as: 'colors'
+              }
+            },
+            {
+              $project: {
+                is_active: 0
+              }
+            },
+          ],
+          as: 'variants',
+        }
+      },
+      {
+        $skip: parseInt(query?.offset) || 0
+      }, {
+        $limit: parseInt(query?.limit) || 10
+      },
+      {
+        $project: {
+          is_active: 0,
+          status: 0,
+          created_at: 0,
+          updated_at: 0,
+          deleted_at: 0
+        }
+      }
+    ]
+  )
 
-  const productsJoinVariants = await productsModel.join({
-    from: 'variants',
-    letVars: {
-      productId: `$_id`
-    },
-    matchExpr: {
-      $eq: ['$product_id', '$$productId']
-    },
-    projectForeignCollection: {
-      is_active: 0
-    },
-    projectMainCollection: {
-      created_at: 0,
-      updated_at: 0
-    },
-    as: 'variants',
-  })
-  console.log(productsJoinVariants);
-
-  // const seenProductIds = new Set();
-  // const productObjectIds = [];
-  // products.forEach(product => {
-  //   const stringProductId = product._id.toString();
-  //   if (!seenProductIds.has(stringProductId)) {
-  //     seenProductIds.add(stringProductId);
-  //     productObjectIds.push(ConvertToObjectId(stringProductId))
-  //   }
-  // })
-
-  // const variantJoinVariantColor = await variantModel.join({from: 'variant_color', localField: '_id', foreignField: 'variant_id', as: 'variantColors'})
-
-
-  // console.log(variantJoinVariantColor);
-
-  // const variantsOfProducts = await variantModel.filter({
-  //   filter: {
-  //     product_id: {
-  //       $in: productObjectIds
-  //     }
-  //   }
-  // })
-
-
-  // const seenVariantIds = new Set();
-  // const variantIds = []
-  // variantsOfProducts.forEach(variant => {
-  //   const stringVariantId = variant._id.toString()
-  //   if(!seenVariantIds.has(stringVariantId)){
-  //     seenVariantIds.add(stringVariantId);
-  //     variantIds.push(ConvertToObjectId(stringVariantId))
-  //   }
-  // })
-  // console.log(variantIds);
-
-  // const variantColor = await variantColorModel.fil
-
-  // const response = products.map(product => {
-  //   const variantsOfProduct = variantsOfProducts.filter(variant => 
-  //     variant.product_id.toString() == product._id.toString())
-  //   return {
-  //     ...product, 
-  //     variants: variantsOfProduct
-  //   }
-  // })
-
-  return productsJoinVariants
+  return {
+    category, 
+    products
+  }
 }
 
 const getChildrenCategory = async (parentId) => {

@@ -1,7 +1,7 @@
 import colorService from "../../services/Admin/colorService.js";
 import productService from "../../services/Admin/productService.js";
 import variantService from "../../services/Admin/variantService.js";
-import { successResponse } from "../../utils/response.js";
+import { errorResponse, successResponse } from "../../utils/response.js";
 import categoryService from "../../services/Admin/categoryService.js";
 import colorModel from "../../models/colorModel.js";
 import qs from 'qs'
@@ -16,39 +16,10 @@ const getAll = async (req, res, next) => {
 
 const detail = async (req, res, next) => {
   try {
-    const product = await productService.findById(req.params.id);
-    const category = await categoryService.findById(product.category_id);
-    product.category = category
-    if (product.category.parent_id) {
-      const parent = await categoryService.getParentCategory(product.category.parent_id);
-      if (parent) {
-        product.category.parent = parent;
-      }
+    if (!req?.params?.id) {
+      return errorResponse(res, { message: 'Sản phẩm không xác định' }, 404);
     }
-    const variants = await variantService.filter({ product_id: product._id })
-
-    // Mảng các id color
-    const colorIds = variants.flatMap(variant => variant.colors.map(color => color._id));
-    // Tìm các bản ghi color từ mảng id color
-    const colors = await colorModel.filter({
-      filter: {
-        _id: { $in: colorIds }
-      }
-    })
-
-    // Mảng gồm key là id của màu, name là Tên màu
-    const colorsMap = colors.reduce((acc, color) => {
-      acc[color._id] = color.name
-      return acc
-    }, {});
-    // Thêm tên color vào danh sách color trong các biến thể
-    const addColorToVariants = variants.map(variant => ({
-      ...variant, colors: variant.colors.map(color => ({
-        ...color, name: colorsMap[color._id]
-      }))
-    }))
-
-    product.variants = addColorToVariants;
+    const product = await productService.getDetail(req.params.id);
     return successResponse(res, { data: product }, 200)
   } catch (error) {
     next(error)

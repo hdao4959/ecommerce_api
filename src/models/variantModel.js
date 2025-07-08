@@ -4,12 +4,12 @@ import ErrorCustom from "../utils/ErrorCustom.js";
 import colorModel from "./colorModel.js";
 const COLLECTION = 'variants'
 const collection = () => getDb().collection(COLLECTION);
-const getAll = async ({conditions = {}, query = {}, projection = {}} = {}) => {
+const getAll = async ({ conditions = {}, query = {}, projection = {} } = {}) => {
   const sortObject = {}
-  sortObject[query?.sortBy || 'created_at'] = query?.orderBy  == 'asc' ? 1 : -1
+  sortObject[query?.sortBy || 'created_at'] = query?.orderBy == 'asc' ? 1 : -1
   const skip = parseInt(query?.skip) || 0
   const limit = parseInt(query?.limit) || 10
-  return await collection().find(conditions, {projection}).sort(sortObject).skip(skip).limit(limit).toArray();
+  return await collection().find(conditions, { projection }).sort(sortObject).skip(skip).limit(limit).toArray();
 }
 
 const create = async (data) => {
@@ -62,20 +62,9 @@ const countFiltered = async (conditions) => {
   return await collection().countDocuments(conditions)
 }
 
-const join = async ({from, localField, foreignField, as}) => {
-  
-  
-  return await collection().aggregate([
-    {
-      $lookup: {
-        from,
-        localField,
-        foreignField,
-        as
-      }
-    }
-  ]).toArray()
+const join = async (stages = []) => {
+  return await collection().aggregate(stages).toArray()
 }
 export default {
-  getAll, create, insertMany, findById, findOneBy, filter, destroy, countAll, countFiltered, join
+  COLLECTION, getAll, create, insertMany, findById, findOneBy, filter, destroy, countAll, countFiltered, join
 }
