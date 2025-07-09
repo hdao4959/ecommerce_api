@@ -10,11 +10,11 @@ const insertMany = async (idVariant, colors) => {
     throw new ErrorCustom('Biến thể sản phẩm không tồn tại', 404)
   }
   const newArrayColor = colors.map(color => {
-    const color_id = color._id;
+    const colorId = ConvertToObjectId(color._id);
     delete color._id
     return {
       ...color, 
-      color_id: color_id,
+      color_id: colorId,
       variant_id: idVariant
     }
   }

@@ -1,8 +1,10 @@
+import { pipeline } from "stream";
 import productsModel from "../../models/productsModel.js";
 import variantModel from "../../models/variantModel.js"
 import { ConvertToObjectId } from "../../utils/ConvertToObjectId.js";
 import ErrorCustom from "../../utils/ErrorCustom.js";
-
+import variantColorModel from "../../models/variantColorModel.js";
+import fs from 'fs/promises'
 const getAll = async ({ query = {}, projection = {} } = {}) => {
   return await variantModel.getAll({ query, projection });
 }
@@ -10,6 +12,12 @@ const getAll = async ({ query = {}, projection = {} } = {}) => {
 const getAllWithMetadata = async (query) => {
 
   let conditions = [];
+  const sortObject = {}
+  sortObject[query?.sortBy || 'created_at'] = query?.orderBy == 'asc' ? 1 : -1
+  console.log(sortObject);
+  
+  const limit = parseInt(query?.limit) || 10;
+  const skip = parseInt(query?.offset) || 0;
   if (query?.search) {
     conditions.push({
       $or: [
@@ -34,42 +42,71 @@ const getAllWithMetadata = async (query) => {
     }
   }
 
-
   conditions = conditions.length > 0 ? { $and: conditions } : {}
-  const variants = await variantModel.getAll({ conditions, query });
 
-  const seenProductIds = new Set()
-  const productObjectIds = [];
-  variants.forEach(variant => {
-    if (!seenProductIds.has(variant.product_id)) {
-      seenProductIds.add(variant.product_id)
-      productObjectIds.push(ConvertToObjectId(variant.product_id))
+  const variants = await variantModel.join([
+    {
+      $match: conditions
+    },
+    {
+      $lookup: {
+        from: 'products',
+        let: {
+          productId: '$product_id'
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $eq: ['$_id', '$$productId']
+              }
+            }
+          }
+        ],
+        as: 'product'
+      }
+    }, {
+      $unwind: '$product'
+    }, {
+      $lookup: {
+        from: 'variant_color',
+        let: {
+          variantId: '$_id'
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $eq: ['$variant_id', '$$variantId']
+              }
+            }
+          }, {
+            $lookup: {
+              from: 'colors',
+              localField: 'color_id',
+              foreignField: '_id',
+              as: 'color'
+            }
+          }, {
+            $unwind: '$color'
+          }
+        ],
+        as: 'variantColor'
+      }
+    }, {
+      $sort: sortObject
+    },
+    {
+      $skip: skip
+    }, {
+      $limit: limit
     }
-  });
-
-  const products = await productsModel.filter({
-    filter: {
-      _id: { $in: productObjectIds }
-    }
-  })
-
-  const productMap = products.reduce((acc, product) => {
-    acc[product._id.toString()] = product
-    return acc
-  }, {})
-
-  const variantAddProduct = variants.map(variant => {
-    const productId = variant.product_id.toString();
-    return ({
-      ...variant,
-      product: productMap[productId]
-    })
-  })
+  ])
 
   const total = await variantModel.countAll();
-  const totalFiltered = await variantModel.countFiltered(conditions)
+  const totalFiltered = variants.length
   return {
-    items: variantAddProduct,
+    items: variants,
     meta: {
       total,
       totalFiltered
@@ -96,7 +133,6 @@ const create = async (data) => {
 }
 
 const insertMany = async (array) => {
-  // Chuyển đổi tất cả các id của color thành object id
   const newArray = array.map(variant => ({
     ...variant, colors: variant.colors.map(color => ConvertToObjectId(color))
   }))
@@ -115,12 +151,30 @@ const filter = async (filter) => {
 }
 
 const destroy = async (id) => {
-  const variant = await variantModel.findById(id);
+  const variant = await variantModel.findById(ConvertToObjectId(id));
   if (!variant) {
     throw new ErrorCustom('Biến thể này không tồn tại!', 404);
   }
-  return await variantModel.destroy(id);
+  // Xoá biến thể
+  const variantColors = await variantColorModel.filter({
+    filter: {
+      variant_id: ConvertToObjectId(id)
+    }
+  })
+  // Lấy tất cả hình ảnh cần xoá
+  const imgPaths = variantColors.map(varColor => varColor.img);
+  await Promise.all(imgPaths.map(path => {
+    try {
+      fs.unlink(`${path}`)
+    } catch (error) {
+      console.log(`Không thẻ xoá ${path}: ${error}`);
 
+    }
+  }))
+  await variantColorModel.deleteMany({
+    variant_id: ConvertToObjectId(id)
+  })
+  await variantModel.destroy(ConvertToObjectId(id));
 }
 
 export default {

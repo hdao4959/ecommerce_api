@@ -3,10 +3,21 @@ import { successResponse } from "../../utils/response.js"
 
 const getAll = async (req, res, next) => {
   try {
-    console.log(req.query);
-    
     const result = await categoryService.getAllWithMetadata(req.query)
     return successResponse(res, { data: result }, 200);
+  } catch (error) {
+    next(error)
+  }
+}
+
+const getDetail = async (req, res, next) => {
+  try {
+    const result = await categoryService.getDetail(req?.params?.id);
+    return successResponse(res, {
+      data: {
+        ... result
+      }
+    })
   } catch (error) {
     next(error)
   }
@@ -42,10 +53,25 @@ const destroy = async (req, res, next) => {
 }
 
 
-const getDetail = async (req, res, next) => {
+const productsOfCategory = async (req, res, next) => {
   try {
-    const result = await categoryService.getDetail(req.query, req.params.id)
-    return successResponse(res, { data: result }, 200);
+    const result = await categoryService.productsOfCategory(req.query, req.params.id)
+    return successResponse(res, { data: {
+      ... result
+    } }, 200);
+  } catch (error) {
+    next(error)
+  }
+}
+
+const getChildrenCategory = async (req, res, next) => {
+  try {
+    const responseChildren = await categoryService.getChildrenCategory(req?.params?.id)
+    return successResponse(res, {
+      data: {
+        ...responseChildren
+      }
+    })
   } catch (error) {
     next(error)
   }
@@ -62,9 +88,11 @@ const getParentCategory = async (req, res, next) => {
 
 export default {
   getAll, 
+  getDetail,
   create, 
   update, 
   destroy, 
-  getDetail,
-  getParentCategory
+  productsOfCategory,
+  getParentCategory,
+  getChildrenCategory
 } 

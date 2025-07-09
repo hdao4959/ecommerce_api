@@ -37,8 +37,6 @@ const loginWithGoogle = async (req, res, next) => {
     }, 200)
 
   } catch (error) {
-    console.log(error);
-
     next(error)
   }
 }

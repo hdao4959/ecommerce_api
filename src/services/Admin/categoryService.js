@@ -1,6 +1,5 @@
 import { client } from "../../config/mongodb.js";
 import categoryModel from "../../models/categoryModel.js";
-import Category from "../../models/categoryModel.js"
 import productsModel from "../../models/productsModel.js";
 import variantColorModel from "../../models/variantColorModel.js";
 import variantModel from "../../models/variantModel.js";
@@ -8,7 +7,7 @@ import { ConvertToObjectId } from "../../utils/ConvertToObjectId.js";
 import ErrorCustom from "../../utils/ErrorCustom.js";
 
 const getAll = async () => {
-  return await Category.getAll();
+  return await categoryModel.getAll();
 }
 
 const getAllWithMetadata = async (query = {}) => {
@@ -55,9 +54,10 @@ const getAllWithMetadata = async (query = {}) => {
   })
 
   const childrenCategory = await categoryModel.filter({
-    parent_id: { $in: parentIds }
+    filter: {
+      parent_id: { $in: parentIds }
+    }
   })
-  console.log('childrenCategory', childrenCategory);
 
   const categories = parentCategories.map(parent => {
     const childrenOfParent = childrenCategory.filter(child => child.parent_id.toString() == parent._id.toString())
@@ -78,47 +78,80 @@ const getAllWithMetadata = async (query = {}) => {
   }
 }
 
+const getDetail = async (id) => {
+  const category =  await categoryModel.join([
+    {
+      $match: {
+        $expr: {
+          $eq: ['$_id', ConvertToObjectId(id)]
+        }
+      }
+    }, {
+      $lookup: {
+        from: categoryModel.COLLECTION,
+        localField: 'parent_id',
+        foreignField: '_id',
+        as: 'parent'
+      }
+    }, {
+      $unwind: {
+        path: '$parent',
+        preserveNullAndEmptyArrays: true
+      }
+    }
+  ]);
+  
+  return {
+    ...category[0]
+  }
+
+}
+
 const create = async (data) => {
 
-  const exist = await Category.findBy({ name: data?.name });
+  const exist = await categoryModel.findBy({ name: data?.name });
 
   if (exist) {
     throw new ErrorCustom('Tên danh mục đã tồn tại!', 400)
   }
 
   if (data.parent_id) {
-    const existParentCategory = await Category.findById(data.parent_id);
+    const existParentCategory = await categoryModel.findById(data.parent_id);
     if (!existParentCategory) {
       throw new ErrorCustom('Danh mục cha không tồn tại!', 404)
     }
   }
 
-  return await Category.create(data);
+  return await categoryModel.create(data);
 }
 
 const update = async (id, data) => {
-  const exist = await Category.findById(id);
+  
+  const exist = await categoryModel.findById(id);
   if (!exist) {
     throw new ErrorCustom('Danh mục này không tồn tại!')
   }
-  const existName = await Category.findBy({
+  
+  const existName = await categoryModel.findBy({
     name: data?.name,
     _id: {
-      $ne: id
+      $ne: ConvertToObjectId(id)
     }
   })
+
 
   if (existName) {
     throw new ErrorCustom('Tên danh mục này đã tồn tại!')
   }
 
   if (data?.parent_id) {
-    const existParentCategory = await Category.findById(data.parent_id);
+    const existParentCategory = await categoryModel.findById(data.parent_id);
+
     if (!existParentCategory) {
       throw new Error('Danh mục cha không tồn tại!')
     }
   }
-  return await Category.updateById(id, data);
+  return await categoryModel.updateById(id, data);
 }
 
 const findById = async (id) => {
@@ -132,7 +165,7 @@ const destroy = async (id) => {
   const session = await client.startSession()
   try {
     session.startTransaction();
-    const category = await Category.findById(id);
+    const category = await categoryModel.findById(id);
     if (!category) {
       throw new ErrorCustom('Danh mục không tồn tại!', 404);
     }
@@ -141,9 +174,16 @@ const destroy = async (id) => {
       throw new ErrorCustom('Danh mục này không thể xoá!', 419)
     }
     // Xoá các danh mục con
-    await Category.deleteChildrenByIdParent(id, session);
+    await categoryModel.deleteMany({
+      conditions: {
+        parent_id: ConvertToObjectId(id)
+      },
+      options: {
+        session
+      }
+    });
     // Xoá danh mục 
-    await Category.deleteById(id, session);
+    await categoryModel.deleteById(id, session);
     return await session.commitTransaction();
   } catch (error) {
     await session.abortTransaction()
@@ -153,10 +193,10 @@ const destroy = async (id) => {
   }
 }
 
-const getDetail = async (query, id) => {
+const productsOfCategory = async (query, id) => {
   if (!id) return null
   const category = await categoryModel.findById(ConvertToObjectId(id));
-  if(!category) throw new ErrorCustom('Danh mục này không tồn tại', 404);
+  if (!category) throw new ErrorCustom('Danh mục này không tồn tại', 404);
 
   const products = await productsModel.join(
     [
@@ -209,18 +249,22 @@ const getDetail = async (query, id) => {
   )
 
   return {
-    category, 
+    category,
     products
   }
 }
 
 const getChildrenCategory = async (parentId) => {
 
-  const parentCategory = await Category.findById(parentId);
+  const parentCategory = await categoryModel.findById(parentId);
   if (!parentCategory) {
     throw new ErrorCustom('Danh mục cha không tồn tại!', 404)
   }
-  const childrenCategory = await Category.getChildrenByIdParent(parentId);
+  const childrenCategory = await categoryModel.filter({
+    filter: {
+      parent_id: ConvertToObjectId(parentId)
+    }
+  });
 
   return {
     'parentCategory': parentCategory,
@@ -228,16 +272,18 @@ const getChildrenCategory = async (parentId) => {
   }
 }
 
-const getParentCategory = async (idParent) => {
-  return await categoryModel.getParentCategory(idParent);
+const getParentCategory = async (id) => {
+  return await categoryModel.findById(id);
 }
+
 
 export default {
   getAll,
   getAllWithMetadata,
+  getDetail,
   create,
   update,
-  getDetail,
+  productsOfCategory,
   findById,
   destroy,
   getChildrenCategory,

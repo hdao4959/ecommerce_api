@@ -24,6 +24,11 @@ const findOne = async ({payload = {}, projection = {}} = {}) => {
   return await collection().findOne(payload, {projection});
 }
 
+const deleteMany = async(conditions = {}) => {
+  if(!conditions) return null
+  return await collection().deleteMany(conditions)
+}
+
 export default {
-  COLLECTION, insertMany, filter, findOne
+  COLLECTION, insertMany, filter, findOne, deleteMany
 }

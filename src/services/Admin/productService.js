@@ -137,6 +137,12 @@ const getDetail = async (id) => {
               foreignField: '_id',
               as: 'parent',
             }
+          },
+           {
+            $unwind: {
+              path: '$parent',
+              preserveNullAndEmptyArrays: true
+            }
           }
         ],
         as: 'category'
@@ -190,7 +196,7 @@ const getDetail = async (id) => {
   }, {})
 
   return {
-    product: product[0],
+    product: product[0] || {},
     variants,
     colorMap
   }

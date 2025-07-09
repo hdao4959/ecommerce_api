@@ -32,7 +32,6 @@ const changeStatus = async (req, res, next) => {
   try {
     const params = req.params
     const body = req.body
-    console.log(body.status);
     
     await orderService.changeStatus(params.id, { status: body.status })
     return successResponse(res, { message: "Thay đổi trạng thái đơn hàng thành công!" }, 200)

@@ -10,12 +10,11 @@ const productValidate = Joi.object({
     'string.max': "Tên sản phẩm không được vượt quá 50 ký tự",
     'any.required': "Tên sản phẩm không được để trống"
   }),
-  category_id: Joi.string().required().trim().messages({
+  category_id: Joi.string().trim().required().messages({
     'any.required': "Bạn chưa chọn danh mục sản phẩm",
-    'string.empty': "Bạn chưa chọ danh mục sản phẩm"
+    'string.empty': "Bạn chưa chọn danh mục sản phẩm"
   }),
   child_category_id: Joi.string().trim(),
-  // variants: Joi.array(),
   is_active: Joi.boolean().default(false),
   status: Joi.string().valid(DRAFT, PUBLISHED).default(DRAFT),
   created_at: Joi.date().timestamp('javascript').default(() => Date.now()),
