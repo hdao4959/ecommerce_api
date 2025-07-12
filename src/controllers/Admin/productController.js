@@ -34,24 +34,14 @@ const create = async (req, res, next) => {
 
 const update = async (req, res, next) => {
   try {
-    const body = qs.parse(req.body);
-
-    await productService.update(req.params.id, body);
+    await productService.update(req.params.id, req.body);
     return successResponse(res, { message: 'Chỉnh sửa thành công' }, 200);
   } catch (error) {
     next(error)
   }
 }
 
-const updateVariants = async (req, res, next) => {
-  try {
-    // return successResponse(res, {data: req.body.variants[0].colors[0]})
-    console.log(req.files);
 
-  } catch (error) {
-    next(error)
-  }
-}
 
 const destroy = async (req, res, next) => {
   try {
@@ -62,6 +52,20 @@ const destroy = async (req, res, next) => {
   }
 }
 
+const getVariantsOfProduct = async (req, res, next) => {
+  try {
+    
+    const responseVariants = await productService.getVariantsOfProduct(req?.params?.id);
+    return successResponse(res, {
+      data: {
+        ...responseVariants
+      }
+    }, 200)
+  } catch (error) {
+    next(error)
+  }
+}
+
 export default {
-  getAll, create, updateVariants, update, detail, destroy
+  getAll, create, update, detail, destroy,getVariantsOfProduct
 }

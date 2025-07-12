@@ -38,8 +38,13 @@ const findOneBy = async ({ payload = {}, projection = {} }) => {
   return await collection().findOne(payload, { projection })
 }
 
-const filter = async ({ filter = {}, projection = {} }) => {
-  return await collection().find(filter, { projection }).toArray()
+const filter = async ({ filter = {}, query = {}, projection = {} }) => {
+  const sortObject = {
+    [query?.sortBy || 'created_at']: query?.orderBy == 'asc' ? 1 : -1
+  }
+  const limit = query?.limit || 10;
+  const skip = query?.offset || 0
+  return await collection().find(filter, { projection }).skip(skip).sort(sortObject).limit(limit).toArray()
 }
 const destroy = async (id) => {
   await collection().deleteOne({ _id: ConvertToObjectId(id) })

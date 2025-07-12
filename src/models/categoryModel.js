@@ -75,7 +75,6 @@ const deleteMany = async ({ conditions = {}, options = {} }) => {
 }
 
 const join = async (stages = []) => {
-  console.log(stages);
   
   return await collection().aggregate(stages).toArray()
 }

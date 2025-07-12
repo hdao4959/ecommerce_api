@@ -105,6 +105,26 @@ const create = async (data) => {
 }
 
 const update = async (id, data) => {
+  data = {
+    ...data, 
+    category_id: ConvertToObjectId(data?.category_id)
+  }
+  const product = await productModel.findById(ConvertToObjectId(id));
+  if(!product) throw new ErrorCustom('Sản phẩm này không tồn tại!', 404);
+
+  const category = await categoryModel.findById(data?.category_id);
+  if(!category || !category.is_active) throw new ErrorCustom('Danh mục này không tồn tại!', 404);
+
+  const existProductName = await productModel.findOneBy({
+    payload: {
+      _id: {
+        $ne: ConvertToObjectId(id)
+      },
+      name: data?.name
+    }
+  })
+  if(existProductName) throw new ErrorCustom('Tên dòng sản phẩm này đã được sử dụng');
+
   return await productModel.update(id, data)
 }
 
@@ -151,14 +171,27 @@ const getDetail = async (id) => {
       $unwind: '$category'
     }
   ])
+
+  return {
+    ... product[0] || {},
+
+  }
+}
+
+const getVariantsOfProduct = async (productId) => {
+
+  const prd = await productModel.findById(ConvertToObjectId(productId));
+  if(!prd) throw new ErrorCustom('Dòng sản phẩm không tồn tại', 404);
+
   const variants = await variantModel.join([
     {
       $match: {
         $expr: {
-          $eq: ["$product_id", ConvertToObjectId(id)]
+          $eq: ["$product_id", ConvertToObjectId(productId)]
         }
       }
     },
+    
     {
       $lookup: {
         from: variantColorModel.COLLECTION,
@@ -171,6 +204,8 @@ const getDetail = async (id) => {
     }
   ])
 
+
+
   const seenColorIds = new Set();
   const colorIds = [];
   variants.forEach(variant => {
@@ -180,8 +215,6 @@ const getDetail = async (id) => {
       colorIds.push(ConvertToObjectId(colorId))
     }
   })
-
-
   const colors = await colorModel.filter({
     filter: {
       _id: {
@@ -196,11 +229,12 @@ const getDetail = async (id) => {
   }, {})
 
   return {
-    product: product[0] || {},
-    variants,
+    variants, 
     colorMap
   }
 }
+
+
 
 const filter = async ({ filter = {}, projection = {} }) => {
   return await productModel.filter({ filter, projection });
@@ -222,5 +256,5 @@ const destroy = async (id) => {
   return await productModel.destroy(id);
 }
 export default {
-  getAll, getAllWithMetadata, getDetail, create, update, findById, filter, destroy
+  getAll, getAllWithMetadata, getDetail, create, update, findById, filter, destroy, getVariantsOfProduct
 }

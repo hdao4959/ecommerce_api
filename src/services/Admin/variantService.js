@@ -14,8 +14,7 @@ const getAllWithMetadata = async (query) => {
   let conditions = [];
   const sortObject = {}
   sortObject[query?.sortBy || 'created_at'] = query?.orderBy == 'asc' ? 1 : -1
-  console.log(sortObject);
-  
+
   const limit = parseInt(query?.limit) || 10;
   const skip = parseInt(query?.offset) || 0;
   if (query?.search) {
@@ -114,22 +113,45 @@ const getAllWithMetadata = async (query) => {
   }
 }
 
-const create = async (data) => {
+const create = async (req) => {
+  const variant = JSON.parse(req.body.variant);
+  
+  const colors = JSON.parse(req.body.colors);
+  const images = req.files
 
-  if (data.product_id) {
-    const product = await productsModel.findById(data.product_id);
+  if (variant.product_id) {
+    const product = await productsModel.findById(ConvertToObjectId(variant.product_id));
     if (!product) {
       throw new ErrorCustom('Dòng sản phẩm bạn chọn không tồn tại!', 404);
     }
+    await productsModel.update(ConvertToObjectId(variant.product_id), {
+      is_active: true
+    })
   }
 
-  if (data.name) {
-    const existNameVariant = await variantModel.findOneBy({ name: data.name, product_id: data.product_id });
+  if (variant.name) {
+    const existNameVariant = await variantModel.findOneBy({ name: variant.name, product_id: variant.product_id });
     if (existNameVariant) {
       throw new ErrorCustom("Tên biến thể đã được tạo cho dòng sản phẩm này rồi", 409)
     }
   }
-  return await variantModel.create(data);
+  const addedVariant = await variantModel.create(variant);
+
+  if (colors.length > 0) {
+    const colorWithImages = colors.map((color, index) => {
+      const colorId = ConvertToObjectId(color._id)
+      delete color._id
+      delete color.image
+      return {
+        ...color,
+        color_id: colorId,
+        img: images[index] ? images[index].path : null,
+        variant_id: ConvertToObjectId(addedVariant.insertedId)
+      }
+    })
+
+    await variantColorModel.insertMany(colorWithImages)
+  }
 }
 
 const insertMany = async (array) => {

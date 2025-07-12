@@ -25,33 +25,17 @@ const getAll = async (req, res, next) => {
 }
 
 const create = async (req, res, next) => {
-  const variant = JSON.parse(req.body.variant)
-  const colors = JSON.parse(req.body.colors)
   const images = req.files;
   try {
-
-    const addedVariant = await variantService.create(variant)
-
-    if (colors.length > 0) {
-      const colorWithImages = colors.map((color, index) => {
-        delete color.image
-        return {
-          ...color,
-          img: images[index] ? images[index].path : null,
-        }
-      })
-      await variantColorService.insertMany(addedVariant.insertedId, colorWithImages)
-    }
-
+    await variantService.create(req)
     return successResponse(res, { message: "Thêm mới biến thể thành công!" }, 200);
-
   } catch (error) {
-    if (images && images.length >= 0) {
+    if (images && images.length > 0) {
+
       images.forEach(image => {
-        const filePath = path.join(__dirname, '../../' + image);
+        const filePath = path.join(__dirname, '../../../' + image.path);
         fs.unlink(filePath, (err) => {
           if (err) console.log('Lỗi xoá file:', err);
-
         })
       })
     }

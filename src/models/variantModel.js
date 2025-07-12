@@ -63,6 +63,8 @@ const countFiltered = async (conditions) => {
 }
 
 const join = async (stages = []) => {
+  console.log('stages',stages);
+  
   return await collection().aggregate(stages).toArray()
 }
 export default {

@@ -11,8 +11,8 @@ productRoutes.get('/', productController.getAll);
 productRoutes.post('/',
    validateBody(productValidate, {stripUnknown: true}),
  productController.create);
-productRoutes.put('/:id', upload.any(), productController.update);
-productRoutes.put('/:id/updateVariants', upload.any(), productController.updateVariants);
+productRoutes.put('/:id', validateBody(productValidate), productController.update);
 productRoutes.get('/:id', productController.detail);
+productRoutes.get('/:id/variants', productController.getVariantsOfProduct);
 productRoutes.delete('/:id', productController.destroy);
 export default productRoutes 
