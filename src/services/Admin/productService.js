@@ -38,7 +38,6 @@ const getAll = async ({ query } = {}) => {
       }
     )
   }
-  console.log(filter);
 
   const finalQuery = filter.length > 0 ? { $and: filter } : {}
   return await productModel.getAll({ query: finalQuery });

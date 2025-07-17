@@ -29,6 +29,12 @@ const getAllActive = async () => {
 
 const getProductsOfCategory = async (categoryId, query) => {
 
+  const sortObject = {
+    ['variant.color.' + query?.sortBy || 'created_at']: query?.orderBy == 'asc' ? 1 : -1
+  }
+
+  const limit = parseInt(query?.limit) || 10
+
   const category = await categoryModel.join([
     {
       $match: {
@@ -56,17 +62,23 @@ const getProductsOfCategory = async (categoryId, query) => {
         ],
         as: 'parent'
       }
+    }, {
+      $unwind: "$parent"
+    }, {
+      $limit: limit
     }
   ])
 
-  if (!category) throw new ErrorCustom("Danh mục sản phẩm không tồn tại!", 404)
+  if (!category.length) throw new ErrorCustom("Danh mục sản phẩm không tồn tại!", 404)
 
   const products = await productModel.join([
     {
       $match: {
         $expr: {
-          $eq: ['$category_id', ConvertToObjectId(categoryId)],
-          $ne: ['$is_active', false]
+          $and: [
+            { $eq: ['$category_id', ConvertToObjectId(categoryId)] },
+            { $ne: ['$is_active', false] }
+          ]
         }
       }
     }, {
@@ -79,8 +91,10 @@ const getProductsOfCategory = async (categoryId, query) => {
           {
             $match: {
               $expr: {
-                $ne: ['$is_active', false],
-                $eq: ['$product_id', '$$productId']
+                $and: [
+                  { $ne: ['$is_active', false] },
+                  { $eq: ['$product_id', '$$productId'] }
+                ]
               }
             }
           }, {
@@ -101,7 +115,7 @@ const getProductsOfCategory = async (categoryId, query) => {
                 }, {
                   $limit: 1
                 }
-              ], 
+              ],
               as: 'color'
             }
           }
@@ -118,11 +132,31 @@ const getProductsOfCategory = async (categoryId, query) => {
         path: '$variant.color',
         preserveNullAndEmptyArrays: true
       }
+    }, {
+      $sort: sortObject
     }
   ])
+
+  const seenProductIds = new Set();
+  const productIds = []
+  products.forEach(p => {
+    const productId = p._id.toString();
+    if (!seenProductIds.has(productId)) {
+      seenProductIds.add(productId)
+      productIds.push(ConvertToObjectId(productId))
+    }
+  })
+
+  const totalVariantFiltered = products?.length;
+  const totalVariants = await variantModel.countFiltered({
+    product_id: { $in: productIds },
+  })
+
   return {
     products,
-    category
+    totalVariantFiltered,
+    totalVariants,
+    category: category[0]
   }
 }
 

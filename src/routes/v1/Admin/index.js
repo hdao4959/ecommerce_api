@@ -5,6 +5,7 @@ import variantRoutes from './variantRoutes.js';
 import colorRoutes from './colorRoutes.js';
 import orderRoutes from './orderRoutes.js';
 import userRoutes from './userRoutes.js';
+import specificationRoutes from './specificationRoutes.js';
 
 const AdminRouter = express.Router();
 
@@ -18,4 +19,5 @@ AdminRouter.use('/variants', variantRoutes)
 AdminRouter.use('/colors', colorRoutes)
 AdminRouter.use('/orders', orderRoutes)
 AdminRouter.use('/users', userRoutes)
+AdminRouter.use('/specifications/', specificationRoutes)
 export default AdminRouter

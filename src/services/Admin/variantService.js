@@ -103,7 +103,7 @@ const getAllWithMetadata = async (query) => {
   ])
 
   const total = await variantModel.countAll();
-  const totalFiltered = variants.length
+  const totalFiltered = await variantModel.countFiltered(conditions);
   return {
     items: variants,
     meta: {

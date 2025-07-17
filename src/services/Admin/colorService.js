@@ -67,8 +67,6 @@ const filter = async (payload) => {
 }
 
 const destroy = async (id) => {
-  console.log(id);
-
   const existColor = await colorModel.findOneBy({ _id: id })
   if (!existColor) {
     throw new ErrorCustom('Màu này không tồn tại!', 404);

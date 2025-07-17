@@ -5,7 +5,7 @@ const getAll = async ({ query = {}, projection = {} }) => {
 }
 
 const getForHomePage = async (query) => {
-  const categories = ['MacBook', 'Iphone'];
+  const categories = ['Samsung','Iphone', 'MacBook'];
   const sortObject = {
     [query?.sortBy || 'created_at']: query?.orderBy == 'asc' ? 1 : -1
   }
