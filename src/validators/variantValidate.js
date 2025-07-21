@@ -19,7 +19,8 @@ const variantValidate = Joi.object({
     'any.only': 'Trạng thái có định dạng không hợp lệ!',
     'string.base': 'Trạng thái có định dạng không hợp lệ!'
   }),
-  colors: Joi.array().items(Joi.string()),
+  specifications: Joi.string().required(),
+  colors: Joi.string().required(),
   created_at: Joi.date().timestamp('javascript').default(() => Date.now()),
   updated_at: Joi.date().timestamp('javascript').default(null),
   deleted_at: Joi.date().timestamp('javascript').default(null),

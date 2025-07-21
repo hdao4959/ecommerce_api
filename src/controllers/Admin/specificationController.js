@@ -23,17 +23,6 @@ const getAll = async (req, res, next) => {
   }
 }
 
-const getAllActive = async (req, res, next) => {
-  try {
-    const data = await specificationService.getAllWithMetadata(req.query);
-    return successResponse(res, {
-      data
-    })
-  } catch (error) {
-    next(error)
-  }
-}
-
 export default {
   create, getAll
 }

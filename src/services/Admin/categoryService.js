@@ -163,8 +163,8 @@ const findById = async (id) => {
 
 const destroy = async (id) => {
   const session = await client.startSession()
+  session.startTransaction();
   try {
-    session.startTransaction();
     const category = await categoryModel.findById(id);
     if (!category) {
       throw new ErrorCustom('Danh mục không tồn tại!', 404);
@@ -184,7 +184,7 @@ const destroy = async (id) => {
     });
     // Xoá danh mục 
     await categoryModel.deleteById(id, session);
-    return await session.commitTransaction();
+    await session.commitTransaction();
   } catch (error) {
     await session.abortTransaction()
     throw error

@@ -27,5 +27,5 @@ const countFiltered = async (conditions = {}) => {
   return collection().countDocuments(conditions)
 }
 export default {
-  create, findOne, getAll, countAll, countFiltered
+  COLLECTION, create, findOne, getAll, countAll, countFiltered
 }

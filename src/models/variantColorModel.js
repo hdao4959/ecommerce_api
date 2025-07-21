@@ -4,10 +4,9 @@ import { ConvertToObjectId } from "../utils/ConvertToObjectId.js";
 
 const COLLECTION = 'variant_color';
 const collection = () => getDb().collection(COLLECTION);
-// const collection = () => getDb().collection(COLLECTION);
 
-const insertMany = async (colors) => {
-  return await collection().insertMany(colors)
+const insertMany = async (colors, options = {}) => {
+  return await collection().insertMany(colors, options)
 
 }
 

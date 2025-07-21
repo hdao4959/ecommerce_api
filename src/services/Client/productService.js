@@ -1,11 +1,17 @@
+import colorModel from "../../models/colorModel.js";
 import productsModel from "../../models/productsModel.js";
+import specificationModel from "../../models/specificationModel.js";
+import variantColorModel from "../../models/variantColorModel.js";
+import variantModel from "../../models/variantModel.js";
+import variantSpecificationModel from "../../models/variantSpecificationModel.js";
+import { ConvertToObjectId } from "../../utils/ConvertToObjectId.js";
 
 const getAll = async ({ query = {}, projection = {} }) => {
   return await productsModel.getAll({ query, projection });
 }
 
 const getForHomePage = async (query) => {
-  const categories = ['Samsung','Iphone', 'MacBook'];
+  const categories = ['Samsung', 'Iphone', 'MacBook'];
   const sortObject = {
     [query?.sortBy || 'created_at']: query?.orderBy == 'asc' ? 1 : -1
   }
@@ -121,6 +127,108 @@ const findOneBy = async ({ payload = {}, projection = {} }) => {
 const filter = async ({ filter = {}, projection = {} }) => {
   return await productsModel.filter({ filter, projection })
 }
+
+
+const detailPage = async (req) => {
+  const slug = req.params.slug;
+  const productLine = await productsModel.findOneBy({
+    payload: { slug, is_active: true },
+    projection: { created_at: 0, updated_at: 0, deleted_at: 0, status: 0 }
+  })
+
+  const variants = await variantModel.join([
+    {
+      $match: {
+        $expr: {
+          $eq: ['$product_id', ConvertToObjectId(productLine._id)]
+        }
+      }
+    },
+    {
+      $lookup: {
+        from: variantSpecificationModel.COLLECTION,
+        let: {
+          variantId: "$_id"
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $eq: ['$variant_id', '$$variantId']
+              }
+            }
+          }, {
+            $lookup: {
+              from: specificationModel.COLLECTION,
+              localField: 'specification_id',
+              foreignField: '_id',
+              as: 'specification'
+            }
+          },
+          {
+            $project: {
+              _id: 0,
+              specification_id: 0,
+              variant_id: 0,
+              specification: {
+                _id: 0,
+                is_active: 0,
+                created_at: 0,
+                updated_at: 0,
+                deleted_at: 0
+              }
+            }
+          }, 
+          {
+            $unwind: "$specification"
+          }
+        ],
+        as: variantSpecificationModel.COLLECTION
+      }
+    }
+  ])
+
+  const variantMap = variants.reduce((acc, variant) => {
+    acc[variant._id.toString()] = { ...variant, colors: [] }
+    return acc
+  }, {})
+  const variantIds = variants.map(variant => variant._id);
+
+  const variantColor = await variantColorModel.filter({
+    filter: {
+      variant_id: { $in: variantIds },
+      is_active: true
+    }
+  })
+
+  const colorIds = variantColor.map(varColor => ConvertToObjectId(varColor.color_id));
+
+  const colors = await colorModel.filter({
+    filter: {
+      _id: { $in: colorIds },
+      is_active: true
+    }, projection: {
+      created_at: 0, updated_at: 0, deleted_at: 0
+    }
+  })
+
+  variantColor.forEach(varColor => {
+    const key = varColor.variant_id.toString()
+    variantMap[key].colors.push(varColor)
+  })
+
+
+
+  const newarrayVariants = Object.values(variantMap)
+
+  return {
+    productLine: productLine,
+    variants: newarrayVariants,
+    variantColor: variantColor,
+    colors: colors,
+  }
+
+}
 export default {
-  getAll, findOneBy, filter, getForHomePage
+  getAll, findOneBy, filter, getForHomePage, detailPage
 }

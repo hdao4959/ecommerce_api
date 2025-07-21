@@ -12,9 +12,9 @@ const getAll = async ({ conditions = {}, query = {}, projection = {} } = {}) => 
   return await collection().find(conditions, { projection }).sort(sortObject).skip(skip).limit(limit).toArray();
 }
 
-const create = async (data) => {
+const create = async (data, options = {}) => {
   data.product_id &&= ConvertToObjectId(data.product_id);
-  return await collection().insertOne(data);
+  return await collection().insertOne(data, options);
 }
 
 const insertMany = async (array, options = {}) => {

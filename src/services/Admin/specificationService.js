@@ -14,13 +14,6 @@ const create = async (data) => {
   return await specificationModel.create(data);
 }
 
-const getAllActive = async (query) => {
-
-  const specifications = await specificationModel.getAll({
-    is_active: true
-  });
-  return specifications
-}
 const getAllWithMetadata = async (query) => {
   let conditions = [];
   if (query?.active) {
@@ -62,5 +55,5 @@ const getAllWithMetadata = async (query) => {
 }
 
 export default {
-  create, getAllWithMetadata, getAllActive
+  create, getAllWithMetadata
 }
