@@ -137,25 +137,17 @@ const getProductsOfCategory = async (categoryId, query) => {
     }
   ])
 
-  const seenProductIds = new Set();
-  const productIds = []
-  products.forEach(p => {
-    const productId = p._id.toString();
-    if (!seenProductIds.has(productId)) {
-      seenProductIds.add(productId)
-      productIds.push(ConvertToObjectId(productId))
-    }
-  })
 
-  const totalVariantFiltered = products?.length;
-  const totalVariants = await variantModel.countFiltered({
-    product_id: { $in: productIds },
+  const totalProductFiltered = products?.length;
+  const totalProducts = await productModel.countFiltered({
+      category_id:  ConvertToObjectId(categoryId),
+      is_active: true
   })
 
   return {
     products,
-    totalVariantFiltered,
-    totalVariants,
+    totalProductFiltered,
+    totalProducts,
     category: category[0]
   }
 }

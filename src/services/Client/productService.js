@@ -229,6 +229,8 @@ const detailPage = async (req) => {
   }
 
 }
+
+
 export default {
   getAll, findOneBy, filter, getForHomePage, detailPage
 }
