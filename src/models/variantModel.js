@@ -17,6 +17,15 @@ const create = async (data, options = {}) => {
   return await collection().insertOne(data, options);
 }
 
+const update = async (id, data, options = {}) => {
+  return await collection().updateOne({
+    _id: id
+  }, {
+    $set: data
+  }, options)
+  
+}
+
 const insertMany = async (array, options = {}) => {
   const colorObjectIds = array.flatMap(variant => variant.colors.map(ConvertToObjectId));
   const confirmExistColorIds = await colorModel.filter({ filter: { _id: { $in: colorObjectIds } } }, options)
@@ -66,5 +75,5 @@ const join = async (stages = []) => {
   return await collection().aggregate(stages).toArray()
 }
 export default {
-  COLLECTION, getAll, create, insertMany, findById, findOneBy, filter, destroy, countAll, countFiltered, join
+  COLLECTION, getAll, create, insertMany, findById, findOneBy, filter, destroy, countAll, countFiltered, join, update
 }

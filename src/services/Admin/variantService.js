@@ -1,4 +1,3 @@
-import { pipeline } from "stream";
 import productsModel from "../../models/productsModel.js";
 import variantModel from "../../models/variantModel.js"
 import { ConvertToObjectId } from "../../utils/ConvertToObjectId.js";
@@ -7,6 +6,10 @@ import variantColorModel from "../../models/variantColorModel.js";
 import fs from 'fs/promises'
 import variantSpecificationModel from "../../models/variantSpecificationModel.js";
 import { client } from "../../config/mongodb.js";
+import colorModel from "../../models/colorModel.js";
+import specificationModel from "../../models/specificationModel.js"
+import variantColorService from "../Client/variantColorService.js";
+import imageService from "./imageService.js";
 const getAll = async ({ query = {}, projection = {} } = {}) => {
   return await variantModel.getAll({ query, projection });
 }
@@ -176,9 +179,117 @@ const create = async (req) => {
   }
 }
 
+const update = async (id, data, images) => {
+  const session = await client.startSession();
+  session.startTransaction();
+  try {
+    const variantId = ConvertToObjectId(id)
+    // Tìm bản ghi xem có tồn tại?
+    const variant = await variantModel.findById(variantId);
+    if (!variant) throw new ErrorCustom('Biến thể này không tồn tại!', 404)
 
-const filter = async (filter) => {
-  return await variantModel.filter(filter);
+    const dataOfVariant = {
+      ...data.variant,
+      product_id: ConvertToObjectId(data.variant.product_id)
+    }
+
+    const formSpecification = data.specifications.map(item => ({
+      ...item,
+      _id: ConvertToObjectId(item._id)
+    }))
+
+    const specificationIds = formSpecification.map(spec => spec._id)
+
+
+    const existSpecifications = await specificationModel.filter({
+      _id: { $in: specificationIds }
+    }, {
+      projection: {
+        _id: 1
+      }
+    }, { session })
+
+    let formVariantColor = data.colors
+
+    if (images.length > 0) {
+      formVariantColor = formVariantColor.map((item, index) => {
+        delete item.image
+        return {
+          ...item,
+          color_id: ConvertToObjectId(item.color_id),
+          variant_id: ConvertToObjectId(item.variant_id),
+          img: images[index] ? images[index]?.path : null
+        }
+      })
+    }
+
+    const colorIdsOfFormVariantColor = formVariantColor?.map(item => item?.color_id.toString());
+    const colorIdsOfVariantColor = await variantColorModel.filter({
+      filter: {
+        variant_id: variantId
+      },
+      options: {
+        session,
+        projection: {
+          color_id: 1
+        }
+      }
+    })
+
+    const variantColorShouldBeDelete = colorIdsOfVariantColor?.filter(item => !colorIdsOfFormVariantColor.includes(item.color_id.toString()))
+
+    if (variantColorShouldBeDelete?.length) {
+      const colorIdsShouldBeDelete = variantColorShouldBeDelete.map(item => ConvertToObjectId(item.color_id))
+      const imgOfColorShouldDelete = await variantColorModel.filter({
+        filter: {
+          variant_id: variantId,
+          color_id: {
+            $in: colorIdsShouldBeDelete
+          }
+        }, options: {
+          projection: {
+            img: 1
+          },
+          session
+        }
+      })
+
+      await imageService.deleteMany(imgOfColorShouldDelete)
+
+      await variantColorModel.deleteMany({
+        variant_id: variantId,
+        color_id: {
+          $in: colorIdsShouldBeDelete
+        }
+      }, {session})
+    }
+
+    await variantColorModel.insertAndUpdateMany(variantId, formVariantColor)
+
+    if (specificationIds.length !== existSpecifications.length) {
+      throw new ErrorCustom('Có một vài thông số không tồn tại trên hệ thống!', 404)
+    }
+    // Update các trường chính của variant
+    await variantModel.update(ConvertToObjectId(id), dataOfVariant, { session })
+    // Xoá các thông số không được gửi lên BE
+    await variantSpecificationModel.deleteMany({
+      variant_id: ConvertToObjectId(id),
+      specification_id: {
+        $nin: specificationIds
+      }
+    }, { session })
+    //Cập nhật và thêm thông số cho biến thể
+    await variantSpecificationModel.insertAndUpdateMany(ConvertToObjectId(id), formSpecification, { session })
+
+
+    // await variantColorModel.insertAndUpdateMany()
+    await session.commitTransaction()
+  } catch (error) {
+    await session.abortTransaction()
+    throw new ErrorCustom(error.message, 500)
+  } finally {
+    session.endSession()
+  }
 }
 
 const destroy = async (id) => {
@@ -217,11 +328,104 @@ const destroy = async (id) => {
   } catch (error) {
     await session.abortTransaction()
     throw error
-  } finally{
+  } finally {
     session.endSession();
   }
 }
 
+const detailById = async (id) => {
+  const variant = await variantModel.findById(ConvertToObjectId(id));
+  const product = await productsModel.findById(ConvertToObjectId(variant.product_id))
+
+  const variantSpecification = await variantSpecificationModel.join([
+    {
+      $match: {
+        $expr: {
+          $eq: ['$variant_id', ConvertToObjectId(id)]
+        }
+      }
+    }, {
+      $lookup: {
+        from: 'specifications',
+        let: {
+          specificationId: '$specification_id'
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $eq: ['$_id', '$$specificationId']
+              }
+            }
+          }, {
+            $project: {
+              created_at: 0,
+              updated_at: 0,
+              deleted_at: 0,
+              is_active: 0
+            }
+          }
+        ],
+        as: 'specification'
+      }
+    }, {
+      $unwind: "$specification"
+    }
+  ])
+
+  const variantColor = await variantColorModel.join([
+    {
+      $match: {
+        $expr: {
+          $eq: ['$variant_id', ConvertToObjectId(id)]
+        }
+      }
+    }, {
+      $project: {
+        created_at: 0,
+        updated_at: 0,
+        deleted_at: 0
+      }
+    },
+    {
+      $lookup: {
+        from: colorModel.COLLECTION,
+        let: {
+          colorId: '$color_id'
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $eq: ['$_id', '$$colorId']
+              }
+            }
+          }, {
+            $project: {
+              created_at: 0,
+              updated_at: 0,
+              deleted_at: 0,
+              is_active: 0,
+              status: 0
+            }
+          }
+        ],
+        as: 'color'
+      }
+    },
+    {
+      $unwind: '$color'
+    }
+
+  ])
+  return {
+    product,
+    variant,
+    variantSpecification,
+    variantColor
+  }
+}
+
 export default {
-  create, getAll, filter, destroy, getAllWithMetadata
+  create, getAll, destroy, getAllWithMetadata, detailById, update
 }

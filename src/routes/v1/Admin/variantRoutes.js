@@ -7,9 +7,12 @@ const variantRoutes = express.Router();
 
 variantRoutes.get('/', variantController.getAll);
 variantRoutes.post('/', 
-  // validateBody(variantValidate),
-  upload.array('images', 20),
+  upload.array('images', 50),
    variantController.create);
+variantRoutes.get('/:id', variantController.detail);
 variantRoutes.delete('/:id', variantController.destroy);
+variantRoutes.put('/:id',
+   upload.array('images', 50),
+    variantController.update)
 
 export default variantRoutes
