@@ -20,7 +20,7 @@ const join = async (stages) => {
   return await collection().aggregate(stages).toArray();
 }
 
-const insertAndUpdateMany = async (idVariant, data) => {
+const insertAndUpdateMany = async (idVariant, data, options = {}) => {
 
   const operations = data.map(item => {
     const {_id, ...cloneItem} = item
@@ -38,7 +38,7 @@ const insertAndUpdateMany = async (idVariant, data) => {
   }
   })
   if(!operations?.length) return 
-  return collection().bulkWrite(operations);
+  return collection().bulkWrite(operations, options);
 }
 
 export default {

@@ -8,7 +8,7 @@ const insertMany = async (colors, options = {}) => {
   return await collection().insertMany(colors, options)
 }
 
-const filter = async ({ filter = {}, limit = 0, sort = {} , options = {}}) => {
+const filter = async ({ filter = {}, limit = 0, sort = {}, options = {} }) => {
   return await collection().find(filter, options).limit(limit).sort(sort).toArray()
 }
 
@@ -35,16 +35,17 @@ const insertAndUpdateMany = async (variantId, data) => {
       updateOne: {
         filter: {
           variant_id: variantId,
-          color_id: item.color_id
+          color_id: ConvertToObjectId(item.color_id)
         },
         update: {
           $set: cloneItem
-        }
+        },
+        upsert: true
       }
     }
   })
 
-  if(!operations?.length) return
+  if (!operations?.length) return
   return await collection().bulkWrite(operations)
 }
 

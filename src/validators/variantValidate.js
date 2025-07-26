@@ -53,7 +53,8 @@ const variantValidate = Joi.object({
     image: Joi.object().messages({
       'any.required': 'Bạn chưa cung cấp hình ảnh!',
       'object.base': 'Dữ liệu hình ảnh không hợp lệ!',
-    })
+    }),
+    is_active: Joi.boolean().default(false)
   })),
   created_at: Joi.date().timestamp('javascript').default(() => Date.now()),
   updated_at: Joi.date().timestamp('javascript').default(null),

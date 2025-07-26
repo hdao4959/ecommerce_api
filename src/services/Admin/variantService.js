@@ -127,7 +127,8 @@ const create = async (req) => {
     const specifications = JSON.parse(req.body.specifications);
     const colors = JSON.parse(req.body.colors);
     const images = req.files
-
+    console.log("variant", variant);
+    
     if (variant.product_id) {
       const product = await productsModel.findById(ConvertToObjectId(variant.product_id));
       if (!product) {
@@ -184,6 +185,8 @@ const update = async (id, data, images) => {
   session.startTransaction();
   try {
     const variantId = ConvertToObjectId(id)
+
+    //1. Xử lí update variant
     // Tìm bản ghi xem có tồn tại?
     const variant = await variantModel.findById(variantId);
     if (!variant) throw new ErrorCustom('Biến thể này không tồn tại!', 404)
@@ -193,14 +196,20 @@ const update = async (id, data, images) => {
       product_id: ConvertToObjectId(data.variant.product_id)
     }
 
+    // Update các trường chính của variant
+    await variantModel.update(ConvertToObjectId(id), dataOfVariant, { session })
+
+
+    //2. Xử lí danh sách thông số
     const formSpecification = data.specifications.map(item => ({
       ...item,
       _id: ConvertToObjectId(item._id)
     }))
 
+    // Danh sách id specification được gửi lên từ FE
     const specificationIds = formSpecification.map(spec => spec._id)
 
-
+    // Kiểm tra các thông số xem có tồn tại trong db không
     const existSpecifications = await specificationModel.filter({
       _id: { $in: specificationIds }
     }, {
@@ -209,68 +218,7 @@ const update = async (id, data, images) => {
       }
     }, { session })
 
-    let formVariantColor = data.colors
-
-    if (images.length > 0) {
-      formVariantColor = formVariantColor.map((item, index) => {
-        delete item.image
-        return {
-          ...item,
-          color_id: ConvertToObjectId(item.color_id),
-          variant_id: ConvertToObjectId(item.variant_id),
-          img: images[index] ? images[index]?.path : null
-        }
-      })
-    }
-
-    const colorIdsOfFormVariantColor = formVariantColor?.map(item => item?.color_id.toString());
-    const colorIdsOfVariantColor = await variantColorModel.filter({
-      filter: {
-        variant_id: variantId
-      },
-      options: {
-        session,
-        projection: {
-          color_id: 1
-        }
-      }
-    })
-
-    const variantColorShouldBeDelete = colorIdsOfVariantColor?.filter(item => !colorIdsOfFormVariantColor.includes(item.color_id.toString()))
-
-    if (variantColorShouldBeDelete?.length) {
-      const colorIdsShouldBeDelete = variantColorShouldBeDelete.map(item => ConvertToObjectId(item.color_id))
-      const imgOfColorShouldDelete = await variantColorModel.filter({
-        filter: {
-          variant_id: variantId,
-          color_id: {
-            $in: colorIdsShouldBeDelete
-          }
-        }, options: {
-          projection: {
-            img: 1
-          },
-          session
-        }
-      })
-
-      await imageService.deleteMany(imgOfColorShouldDelete)
-
-      await variantColorModel.deleteMany({
-        variant_id: variantId,
-        color_id: {
-          $in: colorIdsShouldBeDelete
-        }
-      }, {session})
-    }
-
-    await variantColorModel.insertAndUpdateMany(variantId, formVariantColor)
-
-    if (specificationIds.length !== existSpecifications.length) {
-      throw new ErrorCustom('Có một vài thông số không tồn tại trên hệ thống!', 404)
-    }
-    // Update các trường chính của variant
-    await variantModel.update(ConvertToObjectId(id), dataOfVariant, { session })
+    if (specificationIds?.length !== existSpecifications?.length) throw new ErrorCustom('Một vài thông số không tồn tại trong hệ thống!', 419)
     // Xoá các thông số không được gửi lên BE
     await variantSpecificationModel.deleteMany({
       variant_id: ConvertToObjectId(id),
@@ -278,11 +226,76 @@ const update = async (id, data, images) => {
         $nin: specificationIds
       }
     }, { session })
+
     //Cập nhật và thêm thông số cho biến thể
     await variantSpecificationModel.insertAndUpdateMany(ConvertToObjectId(id), formSpecification, { session })
 
 
-    // await variantColorModel.insertAndUpdateMany()
+    //3. Xử lí biến thể màu sắc
+    let imgsOfVariantColorShouldDelete = []
+    // Mảng color id của variantColor đã thay đổi hình ảnh mới
+    const colorIdsChangedImage = [];
+
+    const formVariantColor = data.colors.map((item, index) => {
+      const cloneVariantColor = {
+        ...item,
+        color_id: ConvertToObjectId(item?.color_id),
+        variant_id: variantId
+      }
+      delete cloneVariantColor?.image
+
+      if (images && images?.[item.color_id]) {
+        colorIdsChangedImage.push(item.color_id);
+        cloneVariantColor.img = images[item.color_id]?.path || null
+      }
+
+      return cloneVariantColor
+    })
+
+    const colorIdsOfFormVariantColor = formVariantColor?.map(item => item?.color_id.toString());
+
+    
+    const variantColor = await variantColorModel.filter({
+      filter: {
+        variant_id: variantId
+      },
+      options: {
+        session,
+        projection: {
+          color_id: 1,
+          img: 1
+        }
+      }
+    })
+
+    const oldImgOfVariantColor = variantColor?.filter(item => colorIdsChangedImage.includes(item?.color_id?.toString()))
+
+    if (oldImgOfVariantColor?.length) {
+      oldImgOfVariantColor.map(item => {
+        imgsOfVariantColorShouldDelete.push(item?.img)
+      })
+    }
+    
+    const variantColorShouldBeDelete = variantColor?.filter(item => !colorIdsOfFormVariantColor.includes(item.color_id.toString()))
+
+
+    if (variantColorShouldBeDelete?.length) {
+      variantColorShouldBeDelete.map(item => {
+        imgsOfVariantColorShouldDelete.push(item?.img)
+      })
+
+      await variantColorModel.deleteMany({
+        variant_id: variantId,
+        color_id: {
+          $in: variantColorShouldBeDelete.map(item => ConvertToObjectId(item.color_id))
+        }
+      }, { session })
+    }
+
+    await variantColorModel.insertAndUpdateMany(variantId, formVariantColor)
+
+    await imageService.deleteMany(imgsOfVariantColorShouldDelete)
+
     await session.commitTransaction()
   } catch (error) {
     await session.abortTransaction()

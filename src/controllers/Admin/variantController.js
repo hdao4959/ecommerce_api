@@ -42,32 +42,66 @@ const detail = async (req, res, next) => {
 const create = async (req, res, next) => {
   const images = req.files;
   try {
-    await variantService.create(req)
-    return successResponse(res, { message: "Thêm mới biến thể thành công!" }, 200);
-  } catch (error) {
-    if (images && images.length > 0) {
-      imageService.deleteMany(images)
-    }
-    next(error)
-  }
-}
-
-const update = async (req, res, next) => {
-  const images = req.files;
-  
-  try {
     const formVariant = JSON.parse(req.body?.variant)
     const formSpecification = JSON.parse(req.body?.specifications)
     const formColor = JSON.parse(req.body?.colors)
     const form = {
       variant: formVariant,
       specifications: formSpecification,
-      colors: formColor
+      colors: formColor,
+    }
+    const { error, value } = variantValidate.validate(form)
+
+    if (error) {
+      if (images && images.length > 0) {
+        imageService.deleteMany(images.map(item => item?.path))
+      }
+      return errorResponse(res, {
+        message: error.details[0].message
+      }, 419);
+    }
+    
+    console.log("value", value);
+
+    return
+
+    // const {error, value} = variantValidate.validate(req.body)
+    // await variantService.create(req)
+    return successResponse(res, { message: "Thêm mới biến thể thành công!" }, 200);
+  } catch (error) {
+    if (images && images.length > 0) {
+      imageService.deleteMany(images.map(item => item?.path))
+    }
+    next(error)
+  }
+}
+
+const update = async (req, res, next) => {
+  const files = req.files;
+
+  try {
+    const formVariant = JSON.parse(req.body?.variant)
+    const formSpecification = JSON.parse(req.body?.specifications)
+    const formColor = JSON.parse(req.body?.colors)
+    const imageColorIds = req.body?.image_color_ids || []
+
+    const images = {}
+    imageColorIds?.forEach((color_id, index) => {
+      images[color_id] = { path: `uploads/${files[index].filename}` }
+    })
+
+    const form = {
+      variant: formVariant,
+      specifications: formSpecification,
+      colors: formColor,
     }
 
     const { error, value } = variantValidate.validate(form);
 
     if (error) {
+      if (files && files.length > 0) {
+        imageService.deleteMany(files.map(file => file?.path))
+      }
       return errorResponse(res, {
         message: error.details[0]?.message
       })
@@ -78,8 +112,9 @@ const update = async (req, res, next) => {
       message: 'Cập nhật biến thể thành công'
     })
   } catch (error) {
-    if (images && images.length > 0) {
-      imageService.deleteMany(images)
+
+    if (files && files.length > 0) {
+      imageService.deleteMany(files.map(file => file?.path))
     }
     next(error)
   }
