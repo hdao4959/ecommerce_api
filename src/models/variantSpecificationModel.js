@@ -5,6 +5,7 @@ const COLLECTION = 'variant_specification';
 const collection = () => getDb().collection(COLLECTION);
 
 const insertMany = async (data, options = {}) => {
+  if(data?.length === 0) return
   return await collection().insertMany(data, options)
 }
 

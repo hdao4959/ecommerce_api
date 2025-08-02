@@ -21,7 +21,7 @@ const variantValidate = Joi.object({
       'string.base': 'Trạng thái có định dạng không hợp lệ!'
     }),
   }),
-  specifications: Joi.array().required().items(Joi.object({
+  specifications: Joi.array().items(Joi.object({
     _id: Joi.string().trim().required().messages({
       'any.required': 'Bạn chưa chọn thông số!',
       'string.empty': 'Thông số không hộp lệ!'
@@ -31,9 +31,9 @@ const variantValidate = Joi.object({
       'string.empty': 'Giá trị thông số không hợp lệ!'
     })
   })).messages({
-    'array.base': 'Mảng thông số kĩ thuật không hợp lệ!'
+    'array.base': 'Danh sách thông số phải là một mảng!',
   }),
-  colors: Joi.array().required().items(Joi.object({
+  colors: Joi.array().min(1).items(Joi.object({
     _id: Joi.string().trim(),
     color_id: Joi.string().trim().required().messages({
       'any.required': 'Màu sắc không xác định!',
@@ -55,7 +55,10 @@ const variantValidate = Joi.object({
       'object.base': 'Dữ liệu hình ảnh không hợp lệ!',
     }),
     is_active: Joi.boolean().default(false)
-  })),
+  })).required().messages({
+    'array.base': 'Danh sách màu sắc phải là một mảng!',
+    'array.min': 'Bạn phải chọn ít nhất một màu sắc!'
+  }),
   created_at: Joi.date().timestamp('javascript').default(() => Date.now()),
   updated_at: Joi.date().timestamp('javascript').default(null),
   deleted_at: Joi.date().timestamp('javascript').default(null),

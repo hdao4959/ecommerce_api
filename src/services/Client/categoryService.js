@@ -32,7 +32,6 @@ const getProductsOfCategory = async (categoryId, query) => {
   const sortObject = {
     ['variant.color.' + query?.sortBy || 'created_at']: query?.orderBy == 'asc' ? 1 : -1
   }
-
   const limit = parseInt(query?.limit) || 10
 
   const category = await categoryModel.join([
@@ -64,8 +63,6 @@ const getProductsOfCategory = async (categoryId, query) => {
       }
     }, {
       $unwind: "$parent"
-    }, {
-      $limit: limit
     }
   ])
 
@@ -74,14 +71,17 @@ const getProductsOfCategory = async (categoryId, query) => {
   const products = await productModel.join([
     {
       $match: {
-        $expr: {
-          $and: [
-            { $eq: ['$category_id', ConvertToObjectId(categoryId)] },
-            { $ne: ['$is_active', false] }
-          ]
-        }
+        category_id: ConvertToObjectId(categoryId),
+        is_active: true
       }
-    }, {
+    },
+    {
+      $sort: sortObject
+    },
+    {
+      $limit: limit
+    },
+    {
       $lookup: {
         from: variantModel.COLLECTION,
         let: {
@@ -92,7 +92,7 @@ const getProductsOfCategory = async (categoryId, query) => {
             $match: {
               $expr: {
                 $and: [
-                  { $ne: ['$is_active', false] },
+                  { $eq: ['$is_active', true] },
                   { $eq: ['$product_id', '$$productId'] }
                 ]
               }
@@ -114,6 +114,10 @@ const getProductsOfCategory = async (categoryId, query) => {
                   }
                 }, {
                   $limit: 1
+                }, {
+                  $project: {
+                    description: 0
+                  }
                 }
               ],
               as: 'color'
@@ -132,16 +136,14 @@ const getProductsOfCategory = async (categoryId, query) => {
         path: '$variant.color',
         preserveNullAndEmptyArrays: true
       }
-    }, {
-      $sort: sortObject
     }
   ])
 
 
   const totalProductFiltered = products?.length;
   const totalProducts = await productModel.countFiltered({
-      category_id:  ConvertToObjectId(categoryId),
-      is_active: true
+    category_id: ConvertToObjectId(categoryId),
+    is_active: true
   })
 
   return {

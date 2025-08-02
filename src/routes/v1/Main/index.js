@@ -15,5 +15,5 @@ MainRoutes.post('/cart', mainController.cartPage);
 MainRoutes.post('/checkout', mainController.checkoutPage);
 MainRoutes.post('/create_payment_url', validateBody(orderValidate), mainController.createPaymentUrl);
 MainRoutes.get('/vnpay_ipn', mainController.getVnpIpn);
-
+MainRoutes.get('/search', mainController.search)
 export default MainRoutes

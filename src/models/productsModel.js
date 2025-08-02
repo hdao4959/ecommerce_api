@@ -34,8 +34,8 @@ const findById = async (id) => {
   return await collection().findOne({ _id: ConvertToObjectId(id) })
 }
 
-const findOneBy = async ({ payload = {}, projection = {} }) => {
-  return await collection().findOne(payload, { projection })
+const findOneBy = async ( payload = {}, options = {} ) => {
+  return await collection().findOne(payload, options)
 }
 
 const filter = async ({ filter = {}, query = {}, projection = {} }) => {

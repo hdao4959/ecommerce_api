@@ -51,7 +51,8 @@ const create = async (req, res, next) => {
       colors: formColor,
     }
     const { error, value } = variantValidate.validate(form)
-
+    console.log(value);
+    
     if (error) {
       if (images && images.length > 0) {
         imageService.deleteMany(images.map(item => item?.path))
@@ -60,13 +61,9 @@ const create = async (req, res, next) => {
         message: error.details[0].message
       }, 419);
     }
-    
-    console.log("value", value);
 
-    return
 
-    // const {error, value} = variantValidate.validate(req.body)
-    // await variantService.create(req)
+    await variantService.create(value, images)
     return successResponse(res, { message: "Thêm mới biến thể thành công!" }, 200);
   } catch (error) {
     if (images && images.length > 0) {

@@ -10,6 +10,7 @@ import colorModel from "../../models/colorModel.js";
 import specificationModel from "../../models/specificationModel.js"
 import variantColorService from "../Client/variantColorService.js";
 import imageService from "./imageService.js";
+import { log } from "console";
 const getAll = async ({ query = {}, projection = {} } = {}) => {
   return await variantModel.getAll({ query, projection });
 }
@@ -118,48 +119,51 @@ const getAllWithMetadata = async (query) => {
   }
 }
 
-const create = async (req) => {
+const create = async (form, images) => {
   const session = await client.startSession()
   session.startTransaction()
   try {
+    const variant = form.variant;
+    const specifications = form.specifications;
+    const colors = form.colors;
 
-    const variant = JSON.parse(req.body.variant);
-    const specifications = JSON.parse(req.body.specifications);
-    const colors = JSON.parse(req.body.colors);
-    const images = req.files
-    console.log("variant", variant);
-    
-    if (variant.product_id) {
-      const product = await productsModel.findById(ConvertToObjectId(variant.product_id));
-      if (!product) {
-        throw new ErrorCustom('Dòng sản phẩm bạn chọn không tồn tại!', 404);
-      }
-      // Cập nhật active cho dòng sản phẩm khi đã có biến thể cho dòng sản phẩm này
-      await productsModel.update(ConvertToObjectId(variant.product_id), {
-        is_active: true
-      })
+    const product = await productsModel.findOneBy(
+      {
+        _id: ConvertToObjectId(variant.product_id),
+      },
+      { session }
+    );
+
+    if (!product) {
+      throw new ErrorCustom('Dòng sản phẩm bạn chọn không tồn tại!', 404);
+    }
+    // Cập nhật active cho dòng sản phẩm khi đã có biến thể cho dòng sản phẩm này
+    await productsModel.update(ConvertToObjectId(variant.product_id), {
+      is_active: true
+    }, { session })
+
+    const existNameVariant = await variantModel.findOneBy({ name: variant.name, product_id: ConvertToObjectId(variant.product_id) }, { session });
+    if (existNameVariant) {
+      throw new ErrorCustom("Tên biến thể đã được tạo cho dòng sản phẩm này rồi", 409)
     }
 
-    if (variant.name) {
-      const existNameVariant = await variantModel.findOneBy({ name: variant.name, product_id: variant.product_id });
-      if (existNameVariant) {
-        throw new ErrorCustom("Tên biến thể đã được tạo cho dòng sản phẩm này rồi", 409)
-      }
-    }
     const addedVariant = await variantModel.create(variant, { session });
 
-    const variantWithSpecifications = specifications?.map(spec => ({
-      ...spec,
-      specification_id: ConvertToObjectId(spec._id),
-      variant_id: ConvertToObjectId(addedVariant.insertedId)
-    }))
+    const variantWithSpecifications = specifications?.map(spec => {
+      const { _id, ...cloneSpec } = spec
+      return {
+        ...cloneSpec,
+        specification_id: ConvertToObjectId(spec._id),
+        variant_id: ConvertToObjectId(addedVariant.insertedId)
+      }
+    })
 
     await variantSpecificationModel.insertMany(variantWithSpecifications, { session })
 
     if (colors.length > 0) {
       const colorWithImages = colors.map((color, index) => {
-        const colorId = ConvertToObjectId(color._id)
-        delete color._id
+        const colorId = ConvertToObjectId(color.color_id)
+        delete color.color_id
         delete color.image
         return {
           ...color,
@@ -254,7 +258,7 @@ const update = async (id, data, images) => {
 
     const colorIdsOfFormVariantColor = formVariantColor?.map(item => item?.color_id.toString());
 
-    
+
     const variantColor = await variantColorModel.filter({
       filter: {
         variant_id: variantId
@@ -275,7 +279,7 @@ const update = async (id, data, images) => {
         imgsOfVariantColorShouldDelete.push(item?.img)
       })
     }
-    
+
     const variantColorShouldBeDelete = variantColor?.filter(item => !colorIdsOfFormVariantColor.includes(item.color_id.toString()))
 
 
@@ -309,34 +313,38 @@ const destroy = async (id) => {
   const session = await client.startSession();
   session.startTransaction();
   try {
-    const variant = await variantModel.findById(ConvertToObjectId(id));
+    const variant = await variantModel.findOneBy({
+      _id: ConvertToObjectId(id)
+    }, { session });
     if (!variant) {
       throw new ErrorCustom('Biến thể này không tồn tại!', 404);
     }
     const variantColors = await variantColorModel.filter({
       filter: {
         variant_id: ConvertToObjectId(id)
+      }, options: {
+        session
       }
     })
+
+    await variantColorModel.deleteMany({
+      variant_id: ConvertToObjectId(id)
+    }, { session })
+
+    await variantSpecificationModel.deleteMany({
+      variant_id: ConvertToObjectId(id)
+    }, { session })
+
+    await variantModel.destroy(ConvertToObjectId(id), { session });
     // Lấy tất cả hình ảnh cần xoá
     const imgPaths = variantColors.map(varColor => varColor.img);
     await Promise.all(imgPaths.map(path => {
       try {
-        fs.unlink(`${path}`)
+        fs.unlink(path)
       } catch (error) {
         console.log(`Không thẻ xoá ${path}: ${error}`);
-
       }
     }))
-    await variantColorModel.deleteMany({
-      variant_id: ConvertToObjectId(id)
-    })
-
-    await variantSpecificationModel.deleteMany({
-      variant_id: ConvertToObjectId(id)
-    })
-
-    await variantModel.destroy(ConvertToObjectId(id));
     await session.commitTransaction();
   } catch (error) {
     await session.abortTransaction()

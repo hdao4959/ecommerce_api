@@ -60,7 +60,10 @@ const getForHomePage = async (query) => {
                   {
                     $match: {
                       $expr: {
-                        $eq: ['$variant_id', '$$variantId']
+                        $and: [
+                          { $eq: ["$variant_id", "$$variantId"] },
+                          { $eq: ["$is_active", true] }
+                        ]
                       }
                     }
                   }
@@ -120,9 +123,6 @@ const getForHomePage = async (query) => {
   return Object.values(results)
 }
 
-const findOneBy = async ({ payload = {}, projection = {} }) => {
-  return await productsModel.findOneBy({ payload, projection });
-}
 
 const filter = async ({ filter = {}, projection = {} }) => {
   return await productsModel.filter({ filter, projection })
@@ -131,17 +131,15 @@ const filter = async ({ filter = {}, projection = {} }) => {
 
 const detailPage = async (req) => {
   const slug = req.params.slug;
-  const productLine = await productsModel.findOneBy({
-    payload: { slug, is_active: true },
-    projection: { created_at: 0, updated_at: 0, deleted_at: 0, status: 0 }
-  })
+  const productLine = await productsModel.findOneBy(
+    { slug, is_active: true },
+    { projection: { created_at: 0, updated_at: 0, deleted_at: 0, status: 0 } }
+  )
 
   const variants = await variantModel.join([
     {
       $match: {
-        $expr: {
-          $eq: ['$product_id', ConvertToObjectId(productLine._id)]
-        }
+        product_id: ConvertToObjectId(productLine._id)
       }
     },
     {
@@ -178,7 +176,7 @@ const detailPage = async (req) => {
                 deleted_at: 0
               }
             }
-          }, 
+          },
           {
             $unwind: "$specification"
           }
@@ -227,10 +225,130 @@ const detailPage = async (req) => {
     variantColor: variantColor,
     colors: colors,
   }
+}
+
+const getForSearchPage = async (req) => {
+  const searchText = req.query.q
+
+  const productsByText = await productsModel.join([
+    {
+      $match: {
+        $text: {
+          $search: searchText
+        },
+        is_active: true
+      }
+    }, 
+    {
+      $lookup: {
+        from: 'variants',
+        let: {
+          productId: '$_id'
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ['$product_id', '$$productId'] },
+                  { $eq: ['$is_active', true] }
+                ]
+              }
+            }
+          }, {
+            $lookup: {
+              from: 'variant_color',
+              let: {
+                variantId: "$_id"
+              },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        { $eq: ['$variant_id', "$$variantId"] },
+                        { $eq: ["$is_active", true] }
+                      ]
+                    }
+                  }
+                }
+              ], 
+              as: 'color'
+            }
+          }
+        ],
+        as: 'variant'
+      }
+    }, {
+      $unwind: '$variant'
+    }, {
+      $unwind: '$variant.color'
+    }
+  ])
+
+  const productsByVariantText = await productsModel.join([
+    {
+      $lookup: {
+        from: 'variants',
+        let: {
+          productId: "$_id"
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  {$eq: ['$product_id', '$$productId']},
+                  {$eq: ['$is_active', true]},
+                  {$text: {$search: searchText}}
+                ]
+              }
+            }
+          }, {
+            $lookup: {
+              from: 'variant_color',
+              let: {
+                variantId: "$_id"
+              },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        { $eq: ['$variant_id', "$$variantId"] },
+                        { $eq: ["$is_active", true] }
+                      ]
+                    }
+                  }
+                }
+              ], 
+              as: 'color'
+            }
+          }
+        ],
+        as: 'variant'
+      }
+    }, {
+      $unwind: "$variant"
+    }, {
+      $unwind: "$variant.color"
+    }
+  ])
+
+  const productIds = new Set();
+  const products = []
+
+  for (const product of [...productsByText, ...productsByVariantText]) {
+    if(!productIds.has(product._id.toString())){
+      productIds.add(product._id.toString());
+      products.push(product)
+    }
+  }
+
+  console.log(products);
 
 }
 
-
 export default {
-  getAll, findOneBy, filter, getForHomePage, detailPage
+  getAll, filter, getForHomePage, detailPage, getForSearchPage
 }

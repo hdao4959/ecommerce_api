@@ -59,8 +59,8 @@ const filter = async ({ filter = {}, projection = {} }) => {
   return await collection().find(filter, { projection }).toArray()
 }
 
-const destroy = async (id) => {
-  return await collection().deleteOne({ _id: ConvertToObjectId(id) })
+const destroy = async (id, options) => {
+  return await collection().deleteOne({ _id: ConvertToObjectId(id) }, options)
 }
 
 const countAll = async () => {

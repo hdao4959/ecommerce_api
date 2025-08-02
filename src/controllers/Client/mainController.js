@@ -321,6 +321,14 @@ const getVnpIpn = async (req, res, next) => {
   }
 }
 
+const search = async (req, res, next) => {
+  try {
+    return await productService.getForSearchPage(req)
+  } catch (error) {
+    next(error)
+  }
+}
+
 export default {
-  homePage, cartPage, checkoutPage, createPaymentUrl, getVnpIpn
+  homePage, cartPage, checkoutPage, createPaymentUrl, getVnpIpn, search
 }
