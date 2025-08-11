@@ -6,13 +6,17 @@ import colorRoutes from './colorRoutes.js';
 import orderRoutes from './orderRoutes.js';
 import userRoutes from './userRoutes.js';
 import specificationRoutes from './specificationRoutes.js';
+import AuthRoutes from './authRoutes.js';
+import { verifyToken } from '../../../middlewares/verifyToken.js';
 
 const AdminRouter = express.Router();
+AdminRouter.use('/auth', AuthRoutes)
+
+AdminRouter.use(verifyToken)
 
 AdminRouter.get('/', (req, res) => {
   res.send('Trang dashboard')
 })
-
 AdminRouter.use('/categories', categoryRoutes)
 AdminRouter.use('/products', productRoutes)
 AdminRouter.use('/variants', variantRoutes)

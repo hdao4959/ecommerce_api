@@ -4,6 +4,15 @@ import { ConvertToObjectId } from "../utils/ConvertToObjectId.js";
 const COLLECTION = 'users'
 const collection = () => getDb().collection(COLLECTION);
 
+export const LOGIN_TYPE = {
+  google: "google",
+  email: "email"
+}
+
+export const USER_ROLE = {
+  admin: 'admin',
+  client: 'client'
+}
 const create = async (data) => {
   return await collection().insertOne(data);
 }
@@ -24,6 +33,10 @@ const findOneBy = async ({ payload = {}, projection = {} } = {}) => {
   return await collection().findOne(payload, { projection });
 }
 
+const findOne = async (payload, options = {}) => {
+  return await collection().findOne(payload, options)
+}
+
 const update = async (id, data, options = {}) => {
   id = ConvertToObjectId(id);
   return await collection().updateOne({ _id: id }, { $set: data }, options)
@@ -42,5 +55,5 @@ const destroy = async (id) => {
 }
 
 export default {
-  create, getAll, findOneBy, update, countAll, countFiltered, destroy
+  create, getAll, findOneBy, findOne , update, countAll, countFiltered, destroy
 }

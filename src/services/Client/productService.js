@@ -230,123 +230,91 @@ const detailPage = async (req) => {
 const getForSearchPage = async (req) => {
   const searchText = req.query.q
 
-  const productsByText = await productsModel.join([
+  const products = await productsModel.join([
     {
       $match: {
-        $text: {
-          $search: searchText
-        },
         is_active: true
       }
-    }, 
+    },
     {
       $lookup: {
-        from: 'variants',
-        let: {
-          productId: '$_id'
-        },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $and: [
-                  { $eq: ['$product_id', '$$productId'] },
-                  { $eq: ['$is_active', true] }
-                ]
-              }
-            }
-          }, {
-            $lookup: {
-              from: 'variant_color',
-              let: {
-                variantId: "$_id"
-              },
-              pipeline: [
-                {
-                  $match: {
-                    $expr: {
-                      $and: [
-                        { $eq: ['$variant_id', "$$variantId"] },
-                        { $eq: ["$is_active", true] }
-                      ]
-                    }
-                  }
-                }
-              ], 
-              as: 'color'
-            }
-          }
-        ],
-        as: 'variant'
-      }
-    }, {
-      $unwind: '$variant'
-    }, {
-      $unwind: '$variant.color'
-    }
-  ])
-
-  const productsByVariantText = await productsModel.join([
-    {
-      $lookup: {
-        from: 'variants',
+        from: variantModel.COLLECTION,
         let: {
           productId: "$_id"
         },
         pipeline: [
           {
             $match: {
+              is_active: true,
+              $text: {
+                $search: searchText
+              },
               $expr: {
-                $and: [
-                  {$eq: ['$product_id', '$$productId']},
-                  {$eq: ['$is_active', true]},
-                  {$text: {$search: searchText}}
-                ]
+                $eq: ['$product_id', "$$productId"]
               }
             }
-          }, {
+          },
+          {
             $lookup: {
-              from: 'variant_color',
+              from: variantColorModel.COLLECTION,
               let: {
-                variantId: "$_id"
+                variantId: "$_id",
               },
               pipeline: [
                 {
                   $match: {
                     $expr: {
                       $and: [
-                        { $eq: ['$variant_id', "$$variantId"] },
+                        { $eq: ["$variant_id", "$$variantId"] },
                         { $eq: ["$is_active", true] }
                       ]
                     }
                   }
                 }
-              ], 
+              ],
               as: 'color'
             }
-          }
+          },
+          {
+            $project: {
+              description: 0,
+            }
+          },
         ],
         as: 'variant'
       }
-    }, {
+    },
+    {
       $unwind: "$variant"
-    }, {
-      $unwind: "$variant.color"
-    }
+    },
+    {
+      $set: {
+        "variant.color": {
+          $arrayElemAt: ["$variant.color", 0]
+        }
+      }
+    },
+    {
+      $limit: parseInt(req.query?.limit) || 10
+    },
+    {
+      $skip: parseInt(req.query?.offset) || 0
+    },
   ])
 
-  const productIds = new Set();
-  const products = []
+  const totalFiltered = await variantModel.countFiltered({
+    is_active: true,
+    $text: {
+      $search: searchText
+    }
+  })
 
-  for (const product of [...productsByText, ...productsByVariantText]) {
-    if(!productIds.has(product._id.toString())){
-      productIds.add(product._id.toString());
-      products.push(product)
+  return {
+    items: products,
+    meta: {
+      totalFiltered
     }
   }
-
-  console.log(products);
-
 }
 
 export default {

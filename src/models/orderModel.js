@@ -27,7 +27,7 @@ const create = async (data, options = {}) => {
     status: orderStatus.PENDING,
     payment_status: paymentStatus.PENDING,
     created_at: timestamp,
-    updated_at: timestamp
+    updated_at: null
   }, options);
 }
 
@@ -36,7 +36,7 @@ const getAll = async ({ conditions = {}, query = {}, projection = {} }) => {
   sortObject[query?.sortBy || 'created_at'] = query?.orderBy === 'asc' ? 1 : -1
   const limit = parseInt(query?.limit) || 10
   const skip = parseInt(query?.offset) || 0;
-  return await collection().find(conditions, {projection}).sort(sortObject).skip(skip).limit(limit).toArray();
+  return await collection().find(conditions, { projection }).sort(sortObject).skip(skip).limit(limit).toArray();
 }
 
 const findOne = async ({ payload = {}, projection = {} } = {}) => {
@@ -46,15 +46,17 @@ const findOne = async ({ payload = {}, projection = {} } = {}) => {
   return await collection().findOne(payload, { projection });
 }
 
-const findOneAndUpdate = async (id, data) => {
+const findOneAndUpdate = async (id, data, options = {}) => {
   return await collection().findOneAndUpdate(
     { _id: ConvertToObjectId(id) },
+
     {
       $set: data
     },
     {
       returnDocument: 'after'
-    })
+    },
+    options)
 }
 
 const countAll = () => {
