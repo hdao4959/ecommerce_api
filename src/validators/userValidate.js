@@ -1,6 +1,7 @@
 import Joi from 'joi'
+import { LOGIN_TYPE, USER_ROLE } from '../models/userModel.js'
 
-const userValidate = Joi.object({
+const register = Joi.object({
   name: Joi.string().min(3).max(30).trim().required().messages({
     'string.empty': 'Tên tài khoản không được để trống',
     'any.required': 'Bạn chưa nhập tên tài khoản',
@@ -37,9 +38,13 @@ const userValidate = Joi.object({
   ward: Joi.number().default(null).messages({
     'number.base': "Mã Phường/xã không hợp lệ"
   }),
+  login_type: Joi.valid(LOGIN_TYPE.email, LOGIN_TYPE.google).default(LOGIN_TYPE.email),
+  role: Joi.valid(USER_ROLE.client, USER_ROLE.admin).default(USER_ROLE.client),
   created_at: Joi.date().timestamp('javascript').default(() => Date.now()),
   updated_at: Joi.date().timestamp('javascript').default(null),
   deleted_at: Joi.date().timestamp('javascript').default(null),
 })
 
-export default userValidate
+export default {
+  register
+}

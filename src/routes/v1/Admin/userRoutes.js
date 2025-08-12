@@ -5,6 +5,6 @@ import userValidate from '../../../validators/userValidate.js';
 const userRoutes = express.Router();
 
 userRoutes.get('/', userController.getAll);
-userRoutes.post('/', validateBody(userValidate, {stripUnknown: true}), userController.create);
+userRoutes.post('/', validateBody(userValidate.register, {stripUnknown: true}), userController.create);
 userRoutes.delete('/:id', userController.destroy)
 export default userRoutes

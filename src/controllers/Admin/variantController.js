@@ -51,7 +51,6 @@ const create = async (req, res, next) => {
       colors: formColor,
     }
     const { error, value } = variantValidate.validate(form)
-    console.log(value);
     
     if (error) {
       if (images && images.length > 0) {

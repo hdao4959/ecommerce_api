@@ -40,7 +40,16 @@ const getAccountByGoogleId = async (req, res, next) => {
 //     next(error)
 //   }
 // }
+
+const register = async (req, res, next) => {
+  try {
+    console.log(req.body);
+    
+  } catch (error) {
+    next(error)
+  }
+}
 export default {
-  loginWithGoogle, getAccountByGoogleId
+  loginWithGoogle, getAccountByGoogleId, register
   // , loginWithEmail
 }

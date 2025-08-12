@@ -5,6 +5,7 @@ import mainController from '../../../controllers/Client/mainController.js';
 import validateBody from '../../../middlewares/validateBody.js';
 import orderValidate from '../../../validators/orderValidate.js';
 import AuthRoutes from './auth.routes.js';
+import { io } from '../../../server.js';
 
 const MainRoutes = express.Router();
 

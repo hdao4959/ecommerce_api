@@ -8,9 +8,13 @@ import transactionModel from "../../models/transactionModel.js";
 import userModel from "../../models/userModel.js";
 import variantColorModel from "../../models/variantColorModel.js";
 import variantModel from "../../models/variantModel.js";
-import { io } from "../../server.js";
+import { io, onlineUsers } from "../../server.js";
 import { ConvertToObjectId } from "../../utils/ConvertToObjectId.js";
 import sortObject from "../../utils/sortObject.js";
+import dateFormat from 'dateformat'
+import querystring from 'qs'
+import crypto, { sign } from 'crypto'
+import { formatPrice } from "../../utils/formatPrice.js";
 
 const create = async (data) => {
   return await orderModel.create(data);
@@ -383,10 +387,10 @@ const getVnpIpn = async (req) => {
       type: NotificationType.order,
       is_read: false,
       user_id: admin._id,
-      title: `Đơn hàng ${order?._id?.toString()} vừa được tạo`,
-      content: `${order?.name} vừa đặt đơn hàng có giá ${order?.amount}`,
+      title: `Bạn có đơn hàng mới!`,
+      content: `${order?.name} vừa đặt đơn hàng có giá ${formatPrice(order?.amount)}`,
       reference_type: NotificationReferenceType.orders,
-      reference_order_id: order?._id,
+      reference_id: order?._id,
       created_at: Date.now(),
       updated_at: null,
       deleted_at: null
@@ -394,12 +398,11 @@ const getVnpIpn = async (req) => {
 
 
     // Gửi thông báo cho admin
-    io.to(admin._id.toString()).emit("notification", {
-      type: NotificationType.order,
-      title: `Đơn hàng ${order?._id?.toString()} vừa được tạo`,
-      content: `${order?.name} vừa đặt đơn hàng có giá ${order?.amount}`,
-    })
+    const socketId = onlineUsers.get(admin._id.toString())
     
+    if (socketId) {
+      io.to(socketId).emit("notification_recent")
+    }
 
     var rspCode = vnpay_Params['vnp_ResponseCode'];
     return 1

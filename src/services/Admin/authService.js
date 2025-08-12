@@ -23,10 +23,16 @@ const loginWithEmail = async (data) => {
     role: existAccount?.role
   }, env.JWT_SECRET, {
     expiresIn: '1d'
+  })
+
+  const account = {
+    email: existAccount?.email,
+    picture: existAccount?.picture
   }
-)
+
   return {
-    token
+    token,
+    account
   }
 }
 

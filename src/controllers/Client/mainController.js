@@ -5,9 +5,6 @@ import variantService from "../../services/Client/variantService.js";
 import { ConvertToObjectId } from "../../utils/ConvertToObjectId.js";
 import { errorResponse, successResponse } from "../../utils/response.js";
 import env from "../../config/env.js";
-import dateFormat from 'dateformat'
-import querystring from 'qs'
-import crypto, { sign } from 'crypto'
 import sortObject from "../../utils/sortObject.js";
 import orderService from "../../services/Client/orderService.js";
 import itemService from "../../services/Client/orderItemsService.js";
@@ -62,7 +59,7 @@ const checkoutPage = async (req, res, next) => {
 
 const createPaymentUrl = async (req, res, next) => {
   try {
-    const result = orderService.createPaymentUrl(req)
+    const result = await orderService.createPaymentUrl(req)
     return successResponse(res, {
       data: {
         ...result

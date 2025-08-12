@@ -6,15 +6,27 @@ export const verifyToken = async (req, res, next) => {
   
   if(!authHeader || !authHeader.startsWith("Bearer ")){
     return errorResponse(res, {
-      message: 'Bạn cần token để đăng nhập'
-    }, 403)
+      message: 'Bạn chưa đăng nhập vào hệ thống!'
+    }, 401)
   }
 
   const token = authHeader.split(' ')[1]
+  if(!token) {
+    return errorResponse(res, {
+      message: "Bạn chưa đăng nhập vào hệ thống!"
+    }, 401)
+  }
 
 try {
   const decoded = jwt.decode(token, env.JWT_SECRET)
-  req.user = decoded
+  
+  if(decoded){
+    req.user = decoded
+  }else{
+    return errorResponse(res, {
+      message: "Token không hợp lệ hoặc đã hết hạn!"
+    }, 403)
+  }
   next()
 } catch (error) {
   return errorResponse(res, {

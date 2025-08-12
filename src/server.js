@@ -8,7 +8,8 @@ import path from 'path'
 import { fileURLToPath } from 'url';
 import http from 'http'
 import { Server } from 'socket.io';
-
+import ErrorCustom from './utils/ErrorCustom.js';
+import jwt from 'jsonwebtoken'
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
@@ -19,18 +20,40 @@ app.use(cors({
 }));
 
 const server = http.createServer(app)
-export const io = new Server(server)
+export const io = new Server(server, {
+  cors: {
+    origin: ['http://localhost:5173', 'http://localhost:5175'],
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+})
 export const onlineUsers = new Map();
 
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token
+
+  if (!token) throw new ErrorCustom('Bạn chưa đăng nhập!', 401)
+  try {
+    const payload = jwt.verify(token, env.JWT_SECRET)
+    
+    socket.userId = payload.id
+    socket.role = payload.role
+    next()
+  } catch (error) {
+    next(error)
+  }
+})
+
+
 io.on('connection', (socket) => {
-  console.log("Có người vừa kết nối", socket.id);
-  socket.on('register', (userId) => {
-    onlineUsers.set(userId, socket.id)
-  })
+
+  if(socket.role === 'admin'){
+    onlineUsers.set(socket.userId, socket.id);
+  }
 
   socket.on('disconnect', () => {
-    for(let [userId, socketId] of onlineUsers.entries()){
-      if(socketId === socket.id){
+    for (let [userId, socketId] of onlineUsers.entries()) {
+      if (socketId === socket.id) {
         onlineUsers.delete(userId);
         break;
       }
