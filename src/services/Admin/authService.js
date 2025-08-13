@@ -1,8 +1,7 @@
-import env from "../../config/env.js";
 import userModel, { LOGIN_TYPE } from "../../models/userModel.js"
 import ErrorCustom from "../../utils/ErrorCustom.js";
 import hash from "../../utils/hash.js";
-import jwt from 'jsonwebtoken'
+import tk from "../../utils/token.js";
 
 const loginWithEmail = async (data) => {
 
@@ -18,11 +17,9 @@ const loginWithEmail = async (data) => {
 
   if (!isCorrectPass) throw new ErrorCustom("Mật khẩu không chính xác", 409)
 
-  const token = jwt.sign({
+  const token = tk.createToken({
     id: existAccount?._id?.toString(),
     role: existAccount?.role
-  }, env.JWT_SECRET, {
-    expiresIn: '1d'
   })
 
   const account = {

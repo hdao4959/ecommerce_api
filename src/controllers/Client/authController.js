@@ -1,13 +1,13 @@
-import { successResponse } from "../../utils/response.js";
-import authService from "../../services/authService.js";
+import { errorResponse, successResponse } from "../../utils/response.js";
+import authService from "../../services/Client/authService.js";
 import userService from "../../services/Client/userService.js";
 
 const loginWithGoogle = async (req, res, next) => {
   try {
-    const account = await authService.loginWithGoogle(req.body); 
+    const result = await authService.loginWithGoogle(req.body); 
     return successResponse(res, {
       data: {
-        account
+        ...result
       }, message: 'Đăng nhập thành công'
     }, 200)
 
@@ -19,10 +19,13 @@ const loginWithGoogle = async (req, res, next) => {
 const getAccountByGoogleId = async (req, res, next) => {
   try {
     const { googleId } = req.body;
-    const account = await userService.findOneBy({
-      payload: { google_id: googleId },
-      projection: { _id: 0, created_at: 0, updated_at: 0, deleted_at: 0 }
-    })
+    const account = await userService.getAccountByGoogleId(googleId)
+    if(!account){
+      return errorResponse(res, {
+        message: 'Tài khoản không tồn tại!'
+      })
+    }
+
     return successResponse(res, {
       data: {
         account
@@ -33,23 +36,36 @@ const getAccountByGoogleId = async (req, res, next) => {
   }
 }
 
-// const loginWithEmail = async (req, res, next) => {
-//   try {
-
-//   } catch (error) {
-//     next(error)
-//   }
-// }
 
 const register = async (req, res, next) => {
   try {
-    console.log(req.body);
+    const result = await authService.register(req.body)
+    console.log(result);
     
+    return successResponse(res, {
+      data: {
+        ...result
+      },
+      message: "Đăng ký tài khoản thành công!"
+    })
   } catch (error) {
     next(error)
   }
 }
+
+const login = async (req, res, next) => {
+try {
+  const result = await authService.login(req.body)
+  return successResponse(res, {
+    data: {
+      ...result
+    }
+  })
+} catch (error) {
+  next(error)
+}
+}
 export default {
-  loginWithGoogle, getAccountByGoogleId, register
+  loginWithGoogle, getAccountByGoogleId, register, login
   // , loginWithEmail
 }

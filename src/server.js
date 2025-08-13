@@ -8,8 +8,8 @@ import path from 'path'
 import { fileURLToPath } from 'url';
 import http from 'http'
 import { Server } from 'socket.io';
-import ErrorCustom from './utils/ErrorCustom.js';
-import jwt from 'jsonwebtoken'
+import tk from './utils/token.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
@@ -32,10 +32,9 @@ export const onlineUsers = new Map();
 io.use((socket, next) => {
   const token = socket.handshake.auth.token
 
-  if (!token) throw new ErrorCustom('Bạn chưa đăng nhập!', 401)
+  if (!token) return
   try {
-    const payload = jwt.verify(token, env.JWT_SECRET)
-    
+    const payload = tk.verifyToken(token, env.JWT_SECRET)
     socket.userId = payload.id
     socket.role = payload.role
     next()
@@ -43,7 +42,6 @@ io.use((socket, next) => {
     next(error)
   }
 })
-
 
 io.on('connection', (socket) => {
 

@@ -6,15 +6,16 @@ const collection = () => getDb().collection(COLLECTION);
 
 export const LOGIN_TYPE = {
   google: "google",
-  email: "email"
+  phone_number: "phone_number",
+  email: 'email'
 }
 
 export const USER_ROLE = {
   admin: 'admin',
   client: 'client'
 }
-const create = async (data) => {
-  return await collection().insertOne(data);
+const create = async (data, options = {}) => {
+  return await collection().insertOne(data, options);
 }
 
 const getAll = async ({ conditions = {}, query = {}, projection = {} }) => {
