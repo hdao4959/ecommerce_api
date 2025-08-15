@@ -16,10 +16,10 @@ export const verifyToken = async (req, res, next) => {
       message: "Bạn chưa đăng nhập vào hệ thống!"
     }, 401)
   }
-
+  
 try {
   const decoded = jwt.decode(token, env.JWT_SECRET)
-  
+
   if(decoded){
     req.user = decoded
   }else{

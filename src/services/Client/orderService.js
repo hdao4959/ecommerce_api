@@ -1,6 +1,6 @@
 import env from "../../config/env.js";
 import colorModel from "../../models/colorModel.js";
-import notificationModel, { NotificationReferenceType, NotificationType } from "../../models/notificationModel.js";
+import notificationModel, { NOTIFICATION_REFERENCE_TYPE, NOTIFICATION_TYPE } from "../../models/notificationModel.js";
 import orderItemModel from "../../models/orderItemModel.js";
 import orderModel, { paymentStatus } from "../../models/orderModel.js";
 import productsModel from "../../models/productsModel.js";
@@ -384,12 +384,12 @@ const getVnpIpn = async (req) => {
 
     // Sử lí notification ở đây
     await notificationModel.create({
-      type: NotificationType.order,
+      type: NOTIFICATION_TYPE.order,
       is_read: false,
       user_id: admin._id,
       title: `Bạn có đơn hàng mới!`,
       content: `${order?.name} vừa đặt đơn hàng có giá ${formatPrice(order?.amount)}`,
-      reference_type: NotificationReferenceType.orders,
+      reference_type: NOTIFICATION_REFERENCE_TYPE.orders,
       reference_id: order?._id,
       created_at: Date.now(),
       updated_at: null,

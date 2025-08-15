@@ -56,5 +56,5 @@ const destroy = async (id) => {
 }
 
 export default {
-  create, getAll, findOneBy, findOne , update, countAll, countFiltered, destroy
+  create, getAll, findOneBy, findOne , update, countAll, countFiltered, destroy, COLLECTION
 }

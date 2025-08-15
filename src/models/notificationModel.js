@@ -5,14 +5,16 @@ import { ReturnDocument } from "mongodb"
 const COLLECTION = "notifications"
 const collection = () => getDb().collection(COLLECTION)
 
-export const NotificationType = {
+export const NOTIFICATION_TYPE = {
   message: "message",
-  order: "order"
+  order: "order",
+  comment: 'comment'
 }
 
-export const NotificationReferenceType = {
+export const NOTIFICATION_REFERENCE_TYPE = {
   orders: "order",
-  messages: "message"
+  messages: "message",
+  comment: 'comment'
 }
 
 

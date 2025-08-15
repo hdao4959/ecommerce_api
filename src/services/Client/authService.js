@@ -52,8 +52,6 @@ const loginWithGoogle = async (body) => {
     await userModel.update(existAccount._id, newData);
   }
 
-  console.log(existAccount);
-
   const token = tk.createToken({
     id: accountFirstLogin?.insertedId?.toString() || existAccount._id.toString(),
     role: USER_ROLE.client

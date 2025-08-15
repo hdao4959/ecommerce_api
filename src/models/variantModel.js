@@ -54,6 +54,9 @@ const findById = async (id) => {
 const findOneBy = async (payload) => {
   return await collection().findOne(payload);
 }
+const findOne = async (payload) => {
+  return await collection().findOne(payload);
+}
 
 const filter = async ({ filter = {}, projection = {} }) => {
   return await collection().find(filter, { projection }).toArray()
@@ -75,5 +78,5 @@ const join = async (stages = []) => {
   return await collection().aggregate(stages).toArray()
 }
 export default {
-  COLLECTION, getAll, create, insertMany, findById, findOneBy, filter, destroy, countAll, countFiltered, join, update
+  COLLECTION, getAll, create, insertMany, findById, findOneBy, findOne, filter, destroy, countAll, countFiltered, join, update
 }

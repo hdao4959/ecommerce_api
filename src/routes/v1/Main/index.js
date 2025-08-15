@@ -6,6 +6,8 @@ import validateBody from '../../../middlewares/validateBody.js';
 import orderValidate from '../../../validators/orderValidate.js';
 import AuthRoutes from './auth.routes.js';
 import { io } from '../../../server.js';
+import commentRoutes from './commentRoutes.js';
+import { verifyToken } from '../../../middlewares/verifyToken.js';
 
 const MainRoutes = express.Router();
 
@@ -18,5 +20,7 @@ MainRoutes.post('/create_payment_url', validateBody(orderValidate), mainControll
 MainRoutes.get('/vnpay_ipn', mainController.getVnpIpn);
 MainRoutes.get('/search', mainController.search)
 MainRoutes.use('/auth', AuthRoutes)
+
+MainRoutes.use('/comment', commentRoutes)
 
 export default MainRoutes
