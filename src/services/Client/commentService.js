@@ -52,6 +52,10 @@ const create = async (req) => {
       created_at: Date.now()
     }
 
+
+
+    await commentModel.create(data, { session })
+
     const notification = {
       type: NOTIFICATION_TYPE.comment,
       is_read: false,
@@ -60,13 +64,12 @@ const create = async (req) => {
       content: data.content,
       reference_type: NOTIFICATION_REFERENCE_TYPE.comment,
       reference_id: data.variant_id,
+      comment_id: data._id,
       created_at: Date.now(),
       updated_at: null,
       deleted_at: null
     }
-
     await notificationModel.create(notification, { session })
-    await commentModel.create(data, { session })
 
     const admin = await userModel.findOne({
       role: USER_ROLE.admin
@@ -93,6 +96,11 @@ const create = async (req) => {
 }
 
 const getListForProduct = async (req) => {
+  const sortObject = {
+    [req.query?.sortBy || 'created_at']: req.query?.orderBy === "asc" ? 1 : -1
+  }
+  const limit = parseInt(req.query?.limit) || 10
+  const skip = parseInt(req.query?.offset) || 0
   const variantId = ConvertToObjectId(req.params.variantId)
 
   const countVariant = variantModel.countFiltered({
@@ -135,12 +143,53 @@ const getListForProduct = async (req) => {
       }
     }, {
       $unwind: "$user"
+    }, {
+      $sort: sortObject
+    }, {
+      $skip: skip
+    }
+    , {
+      $limit: limit
     }])
 
 
   return comments
 }
 
+const deleteComment = async (req) => {
+  const session = await client.startSession()
+  try {
+    session.startTransaction()
+    const idComment = ConvertToObjectId(req.params.id)
+    const idUser = req.user.id
+    const existComment = await commentModel.findOne({
+      _id: idComment
+    })
+
+    if (!existComment) throw new ErrorCustom('Comment không tồn tại!')
+
+
+    if (idUser !== existComment?.user_id?.toString()) throw new ErrorCustom("Bạn không thể xoá comment này")
+
+    await commentModel.destroy({
+      _id: idComment
+    }, {
+      session
+    })
+    await notificationModel.destroy({
+      comment_id: idComment
+    }, {
+      session
+    })
+    await session.commitTransaction()
+
+  } catch (error) {
+    await session.abortTransaction()
+    throw error
+  } finally {
+    session.endSession()
+  }
+}
 export default {
-  create, getListForProduct
+  create, getListForProduct, deleteComment
 }

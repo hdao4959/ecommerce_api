@@ -27,6 +27,17 @@ const getListForProduct = async (req, res, next) => {
     next(error)
   }
 }
+
+const deleteComment = async(req, res, next) => {
+  try {
+    await commentService.deleteComment(req);
+    return successResponse(res, {
+      message: "Xoá comment thành công!"
+    })
+  } catch (error) {
+    next(error)
+  }
+}
 export default {
-  create, getListForProduct
+  create, getListForProduct, deleteComment
 }

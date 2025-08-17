@@ -60,8 +60,8 @@ const loginWithGoogle = async (body) => {
     token,
     account: {
       name,
-      picture
-
+      picture,
+      id: accountFirstLogin?.insertedId?.toString() || existAccount._id.toString()
     }
   }
 }
@@ -84,6 +84,7 @@ const register = async (body) => {
   })
   const account = {
     name: body.name,
+    id: body._id
   }
 
   return {
@@ -97,7 +98,8 @@ const login = async (body) => {
     phone_number: body.phone_number,
     login_type: LOGIN_TYPE.phone_number
   })
-  console.log(existAccount);
+
+  const idAccount = existAccount._id.toString()
 
 
   if (!existAccount) throw new ErrorCustom('Tài khoản không tồn tại trong hệ thống!', 404)
@@ -106,7 +108,7 @@ const login = async (body) => {
   if (!matchPassword) throw new ErrorCustom('Mật khẩu không chính xác!', 401)
 
   const token = tk.createToken({
-    id: existAccount._id.toString(),
+    id: idAccount,
     role: existAccount.role
   })
 
@@ -114,6 +116,7 @@ const login = async (body) => {
     token,
     account: {
       name: existAccount.name,
+      id: idAccount
     }
   }
 }

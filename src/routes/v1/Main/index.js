@@ -21,6 +21,6 @@ MainRoutes.get('/vnpay_ipn', mainController.getVnpIpn);
 MainRoutes.get('/search', mainController.search)
 MainRoutes.use('/auth', AuthRoutes)
 
-MainRoutes.use('/comment', commentRoutes)
+MainRoutes.use('/comments', commentRoutes)
 
 export default MainRoutes

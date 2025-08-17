@@ -53,6 +53,10 @@ const findAndUpdate = async (payload = {}, data = {}, options = {}) => {
     { returnDocument: "after" }
   )
 }
+
+const destroy = async (conditions, options = {}) => {
+  return await collection().deleteOne(conditions, options)
+}
 export default {
-  create, countFiltered, getAll, update, findAndUpdate
+  create, countFiltered, getAll, update, findAndUpdate, destroy
 }

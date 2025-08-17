@@ -8,9 +8,7 @@ import variantSpecificationModel from "../../models/variantSpecificationModel.js
 import { client } from "../../config/mongodb.js";
 import colorModel from "../../models/colorModel.js";
 import specificationModel from "../../models/specificationModel.js"
-import variantColorService from "../Client/variantColorService.js";
 import imageService from "./imageService.js";
-import { log } from "console";
 const getAll = async ({ query = {}, projection = {} } = {}) => {
   return await variantModel.getAll({ query, projection });
 }

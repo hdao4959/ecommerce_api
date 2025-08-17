@@ -4,11 +4,11 @@ const COLLECTION = 'comments'
 const collection = () => getDb().collection(COLLECTION)
 
 const create = async (data, options = {}) => {
-  if(!data) return 
+  if (!data) return
   return await collection().insertOne(data, options);
 }
 
-const getAll = async ({conditions = {}, query, options = {}} = {} ) => {
+const getAll = async ({ conditions = {}, query, options = {} } = {}) => {
   const sortObject = {
     [query?.sortBy || 'created_at']: query?.orderBy == "asc" ? 1 : -1
   }
@@ -17,9 +17,18 @@ const getAll = async ({conditions = {}, query, options = {}} = {} ) => {
   return await collection().find(conditions, options).sort(sortObject).skip(skip).limit(limit).toArray()
 }
 
+const findOne = async (conditions, options = {}) => {
+  return await collection().findOne(conditions, options)
+}
+
+const destroy = async (conditions = {}, options = {}) => {
+  return await collection().deleteOne(conditions, options)
+}
+
 const join = async (stages = []) => {
   return await collection().aggregate(stages).toArray()
 }
+
 export default {
-  create, getAll, join
+  create, getAll, join, findOne, destroy
 }

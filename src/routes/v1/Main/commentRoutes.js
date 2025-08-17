@@ -7,6 +7,6 @@ const commentRoutes = express.Router()
 
 commentRoutes.get('/:variantId', commentController.getListForProduct)
 commentRoutes.use(verifyToken)
-commentRoutes.post('/create', validateBody(commentValidate.create), commentController.create)
-
+commentRoutes.post('/', validateBody(commentValidate.create), commentController.create)
+commentRoutes.delete('/:id', commentController.deleteComment)
 export default commentRoutes
