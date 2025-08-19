@@ -10,7 +10,10 @@ const getAll = async ({ query = {}, projection = {} }) => {
   return await productsModel.getAll({ query, projection });
 }
 
-const getForHomePage = async (query) => {
+const homePage = async (req) => {
+  const query = req.query
+  const userId = req?.user?.id ? ConvertToObjectId(req.user.id) : null
+
   const categories = ['Samsung', 'Iphone', 'MacBook'];
   const sortObject = {
     [query?.sortBy || 'created_at']: query?.orderBy == 'asc' ? 1 : -1
@@ -81,6 +84,29 @@ const getForHomePage = async (query) => {
         }
       },
       {
+        $lookup: {
+          from: 'wishlist',
+          let: {
+            productId: '$_id',
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$product_id', '$$productId'] },
+                    { $eq: ['$user_id', userId] }
+                  ]
+                }
+              }
+            }, {
+              $limit: 1
+            }
+          ],
+          as: 'wishlist'
+        }
+      },
+      {
         $unwind: {
           path: '$category',
           preserveNullAndEmptyArrays: true
@@ -112,21 +138,32 @@ const getForHomePage = async (query) => {
       },
       {
         $limit: limit
+      },
+      {
+        $addFields: {
+          "inWishlist": {
+            $gt: [{
+              $size: '$wishlist'
+            }, 0]
+          }
+        }
+      }, {
+        $project: {
+          wishlist: 0
+        }
       }
     ])
-
     return {
       category: cate,
       products
     }
   }))
-  return Object.values(results)
+  return {
+    collections: results
+  }
 }
 
 
-const filter = async ({ filter = {}, projection = {} }) => {
-  return await productsModel.filter({ filter, projection })
-}
 
 
 const detailPage = async (req) => {
@@ -318,5 +355,5 @@ const getForSearchPage = async (req) => {
 }
 
 export default {
-  getAll, filter, getForHomePage, detailPage, getForSearchPage
+  getAll, homePage, detailPage, getForSearchPage
 }

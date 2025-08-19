@@ -12,10 +12,16 @@ import ErrorCustom from "../../utils/ErrorCustom.js";
 import { orderStatus, paymentStatus } from "../../models/orderModel.js";
 import transactionService from "../../services/Client/transactionService.js";
 import cartService from "../../services/Client/cartService.js";
+import { decodeToken, verifyToken } from "../../middlewares/verifyToken.js";
 
 const homePage = async (req, res, next) => {
   try {
-    const products = await productService.getForHomePage(req.query);
+    const user = decodeToken(req)
+    if(user){
+      req.user = user
+    }
+    
+    const products = await productService.homePage(req);
 
     return successResponse(res, {
       data: {

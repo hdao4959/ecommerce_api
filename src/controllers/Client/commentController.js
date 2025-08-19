@@ -38,6 +38,14 @@ const deleteComment = async(req, res, next) => {
     next(error)
   }
 }
+
+// const averageVote = async (req, res, next) => {
+//   try {
+//     const averageVote = commentService.averageVote(req)
+//   } catch (error) {
+//     next(error)
+//   }
+// }
 export default {
   create, getListForProduct, deleteComment
 }

@@ -190,6 +190,10 @@ const deleteComment = async (req) => {
     session.endSession()
   }
 }
+
+const averageVote = () => {
+  
+}
 export default {
   create, getListForProduct, deleteComment
 }
