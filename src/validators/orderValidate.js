@@ -1,5 +1,6 @@
 import Joi from "joi"
 const orderValidate = Joi.object({
+  firebaseToken:  Joi.string().required(),
   name: Joi.string().trim().min(3).max(30).required().messages({
     'string.empty': 'Họ và tên không được để trống',
     'any.required': 'Bạn chưa nhập họ và tên',

@@ -36,6 +36,18 @@ const getAccountByGoogleId = async (req, res, next) => {
   }
 }
 
+const getInfoAccount = async(req, res, next) => {
+  try {
+    const account = await userService.getInfoAccount(req);
+    return successResponse(res, {
+      data: {
+        account
+      }
+    })
+  } catch (error) {
+    next(error)
+  }
+}
 
 const register = async (req, res, next) => {
   try {
@@ -66,6 +78,6 @@ try {
 }
 }
 export default {
-  loginWithGoogle, getAccountByGoogleId, register, login
+  loginWithGoogle, getAccountByGoogleId, register, login, getInfoAccount
   // , loginWithEmail
 }

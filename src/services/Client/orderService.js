@@ -140,7 +140,7 @@ const checkoutPage = async (req) => {
 
 const createPaymentUrl = async (req) => {
   const body = req.body
-
+  delete body?.firebaseToken
   const orderCreated = await orderModel.create({
     name: body.name,
     phone_number: body.phoneNumber,

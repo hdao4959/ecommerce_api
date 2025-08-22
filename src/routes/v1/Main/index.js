@@ -7,6 +7,7 @@ import orderValidate from '../../../validators/orderValidate.js';
 import AuthRoutes from './AuthRoutes.js';
 import commentRoutes from './commentRoutes.js';
 import wishlistRoutes from './wishlistRoutes.js'
+import { verifyFirebaseToken } from '../../../middlewares/verifyFirebase.js';
 
 const MainRoutes = express.Router();
 MainRoutes.get('/', mainController.homePage)
@@ -14,7 +15,7 @@ MainRoutes.use('/categories', categoryRoutes)
 MainRoutes.use('/products', productRoutes)
 MainRoutes.post('/cart', mainController.cartPage);
 MainRoutes.post('/checkout', mainController.checkoutPage);
-MainRoutes.post('/create_payment_url', validateBody(orderValidate), mainController.createPaymentUrl);
+MainRoutes.post('/create_payment_url', validateBody(orderValidate), verifyFirebaseToken,  mainController.createPaymentUrl);
 MainRoutes.get('/vnpay_ipn', mainController.getVnpIpn);
 MainRoutes.get('/search', mainController.search)
 MainRoutes.use('/auth', AuthRoutes)
