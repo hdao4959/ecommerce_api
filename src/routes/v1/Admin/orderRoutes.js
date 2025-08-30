@@ -5,5 +5,6 @@ const orderRoutes = express.Router();
 orderRoutes.get('/', orderController.getAll);
 orderRoutes.get('/:id', orderController.detail);
 orderRoutes.post('/:id/changeStatus', orderController.changeStatus)
+// orderRoutes.get('/assign', orderController.autoAssignOrdersForShipper)
 export default orderRoutes
 

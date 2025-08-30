@@ -35,7 +35,7 @@ const register = Joi.object({
     'number.base': "Mã Phường/xã không hợp lệ"
   }),
   login_type: Joi.valid(LOGIN_TYPE.email, LOGIN_TYPE.google, LOGIN_TYPE.phone_number).required(),
-  role: Joi.valid(USER_ROLE.client, USER_ROLE.admin).default(USER_ROLE.client),
+  role: Joi.valid(USER_ROLE.client, USER_ROLE.admin, USER_ROLE.shipper).default(USER_ROLE.client),
   created_at: Joi.date().timestamp('javascript').default(() => Date.now()),
   updated_at: Joi.date().timestamp('javascript').default(null),
   deleted_at: Joi.date().timestamp('javascript').default(null),

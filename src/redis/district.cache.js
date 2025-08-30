@@ -6,7 +6,6 @@ const getDistrictKey = (provinceCode) => {
   return `location:districts:${provinceCode}`;
 }
 
-
 const getAll = async (provinceCode) => {
   try {
     const cached = await redis.get(getDistrictKey(provinceCode));
@@ -14,8 +13,9 @@ const getAll = async (provinceCode) => {
       return JSON.parse(cached)
     }
 
-    const {data} = await axios.get(`https://vn-public-apis.fpo.vn/districts/getByProvince?provinceCode=${provinceCode}&limit=-1`)
-    const districts = data.data.data;
+    // const {data} = await axios.get(`https://vn-public-apis.fpo.vn/districts/getByProvince?provinceCode=${provinceCode}&limit=-1`)
+    const {data} = await axios.get(`https://provinces.open-api.vn/api/v1/p/${provinceCode}?depth=2`)
+    const districts = data.districts
     await redis.set(getDistrictKey(provinceCode), JSON.stringify(districts), "EX", 3600 * 24)
     return districts
   } catch (error) {

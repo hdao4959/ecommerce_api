@@ -7,24 +7,48 @@ const orderValidate = Joi.object({
     'string.min': 'Họ và tên tối thiểu 3 ký tự',
     'string.max': 'Họ và tên tối đa 30 ký tự'
   }),
-  phoneNumber: Joi.string().trim().min(8).max(12).required().messages({
+  phoneNumber: Joi.string().trim().min(8).max(20).required().messages({
     'string.empty': 'Số điện thoại không được để trống',
     'any.required': 'Bạn chưa nhập số điện thoại',
     'string.min': 'Số điện thoại tối thiểu 8 ký tự',
-    'string.max': 'Số điện thoại tối đa 12 ký tự'
+    'string.max': 'Số điện thoại tối đa 20 ký tự'
   }),
   email: Joi.string().trim(),
-  province: Joi.string().required().messages({
-    'string.empty': 'Thành phố không được để trống',
-    'any.required': 'Bạn chưa chọn thành phố',
+  provinceCode: Joi.string().required().messages({
+    'string.empty': 'Mã thành phố không được để trống',
+    'any.required': 'Bạn chưa cung cấp mã thành phố',
   }),
-  district: Joi.string().required().messages({
-    'string.empty': 'Quận/huyện không được để trống',
-    'any.required': 'Bạn chưa chọn quận/huyện',
+  provinceName: Joi.string().required().messages({
+    'string.empty': 'Tên thành phố không được để trống',
+    'any.required': 'Bạn chưa cung cấp tên thành phố',
   }),
-  ward: Joi.string().required().messages({
-    'string.empty': 'Phường/xã không được để trống',
-    'any.required': 'Bạn chưa chọn phường/xã',
+  districtCode: Joi.string().required().messages({
+    'string.empty': 'Mã quận/huyện không được để trống',
+    'any.required': 'Bạn chưa cung cấp mã quận/huyện',
+  }),
+  districtName: Joi.string().required().messages({
+    'string.empty': 'Tên quận/huyện không được để trống',
+    'any.required': 'Bạn chưa cung cấp tên quận/huyện',
+  }),
+  wardCode: Joi.string().required().messages({
+    'string.empty': 'Mã phường/xã không được để trống',
+    'any.required': 'Bạn chưa cung cấp mã phường/xã',
+  }),
+  wardName: Joi.string().required().messages({
+    'string.empty': 'Tên phường/xã không được để trống',
+    'any.required': 'Bạn chưa cung cấp tên phường/xã',
+  }),
+  addressDetail: Joi.string().required().messages({
+    'string.empty': 'Địa chỉ chi tiết không được để trống',
+    'any.required': 'Bạn chưa cung cấp thông tin địa chỉ chi tiết',
+  }),
+  lng: Joi.number().required().messages({
+    'string.empty': 'Kinh độ không được để trống',
+    'any.required': 'Bạn chưa cung cấp kinh độ',
+  }),
+  lat: Joi.number().required().messages({
+    'string.empty': 'Vĩ độ không được để trống',
+    'any.required': 'Bạn chưa cung cấp vĩ độ',
   }),
   note: Joi.string().trim().allow(''),
   items: Joi.array().items(

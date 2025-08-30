@@ -10,10 +10,10 @@ const getAll = async () => {
   if (cached) {
     return JSON.parse(cached)
   }
-    const { data } = await axios.get("https://vn-public-apis.fpo.vn/provinces/getAll?limit=-1");
-    const provinces = data.data.data;
-    await redis.set(PROVINCES_KEY, JSON.stringify(provinces), "EX", 24 * 3600)
-    return provinces
+    // const { data } = await axios.get("https://vn-public-apis.fpo.vn/provinces/getAll?limit=-1");
+    const { data } = await axios.get("https://provinces.open-api.vn/api/v1/p/");
+    await redis.set(PROVINCES_KEY, JSON.stringify(data), "EX", 24 * 3600)
+    return data
   } catch (error) {
     console.log('Lỗi khi gọi provinces cache');
     throw new ErrorCustom(error)

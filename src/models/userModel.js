@@ -12,7 +12,8 @@ export const LOGIN_TYPE = {
 
 export const USER_ROLE = {
   admin: 'admin',
-  client: 'client'
+  client: 'client',
+  shipper: 'shipper'
 }
 const create = async (data, options = {}) => {
   return await collection().insertOne(data, options);

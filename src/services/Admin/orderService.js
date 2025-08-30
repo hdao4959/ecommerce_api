@@ -1,5 +1,6 @@
 import orderItemModel from "../../models/orderItemModel.js"
-import orderModel from "../../models/orderModel.js"
+import orderModel, { orderStatus } from "../../models/orderModel.js"
+import userModel, { USER_ROLE } from "../../models/userModel.js"
 import { ConvertToObjectId } from "../../utils/ConvertToObjectId.js"
 import ErrorCustom from "../../utils/ErrorCustom.js"
 
@@ -22,7 +23,7 @@ const getAllWithMetadata = async (query = {}) => {
         )
     }
   }
-  
+
   if (query.search) {
     conditions.push({
       $or: [
@@ -41,13 +42,13 @@ const getAllWithMetadata = async (query = {}) => {
 
   conditions = conditions.length > 0 ? { $and: conditions } : {}
 
-  const orders = await orderModel.getAll({conditions, query});
+  const orders = await orderModel.getAll({ conditions, query });
   const total = await orderModel.countAll()
   const totalFiltered = await orderModel.countFiltered(conditions)
   return {
     items: orders,
     meta: {
-      total, 
+      total,
       totalFiltered
     }
   }
@@ -81,8 +82,43 @@ const changeStatus = async (id, data) => {
   if (!id) throw new ErrorCustom('Bạn chưa truyền id đơn hàng');
   if (!data) throw new ErrorCustom('Bạn chưa truyền dữ liệu thay đổi')
 
-  return await orderModel.findOneAndUpdate(ConvertToObjectId(id), data);
+  const order = await orderModel.findOne({
+    payload: {
+      _id: ConvertToObjectId(id),
+    }
+  })
+
+  if (!order) throw new ErrorCustom("Đơn hàng không tồn tại!")
+  if (order?.status == orderStatus.CANCELED) throw new ErrorCustom("Đơn hàng này đã bị huỷ")
+
+  let shipper_id = null
+  if (!order?.shipper_id && data?.status === orderStatus.SHIPPING) {
+    const shipper = await userModel.findOne({
+      role: USER_ROLE.shipper,
+      'shipper_area.province_code': parseInt(order?.province_code),
+      'shipper_area.district_code': parseInt(order?.district_code),
+      'shipper_area.ward_code': parseInt(order?.ward_code),
+    }, {
+      projection: {
+        _id: 1
+      }
+    })
+    shipper_id = shipper._id
+  }
+
+  return await orderModel.update({
+    _id: ConvertToObjectId(id),
+    status: !orderStatus.CANCELED
+  }, {
+    ...data,
+    shipper_id
+  });
+
+}
+
+const autoAssignOrdersForShipper = async () => {
+
 }
 export default {
-  getAll, getAllWithMetadata, findOne, getDetail, changeStatus
+  getAll, getAllWithMetadata, findOne, getDetail, changeStatus, autoAssignOrdersForShipper
 }

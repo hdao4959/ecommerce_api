@@ -2,7 +2,7 @@ import env from "../../config/env.js";
 import colorModel from "../../models/colorModel.js";
 import notificationModel, { NOTIFICATION_REFERENCE_TYPE, NOTIFICATION_TYPE } from "../../models/notificationModel.js";
 import orderItemModel from "../../models/orderItemModel.js";
-import orderModel, { paymentStatus } from "../../models/orderModel.js";
+import orderModel, { orderStatus, paymentStatus } from "../../models/orderModel.js";
 import productsModel from "../../models/productsModel.js";
 import transactionModel from "../../models/transactionModel.js";
 import userModel from "../../models/userModel.js";
@@ -15,6 +15,7 @@ import dateFormat from 'dateformat'
 import querystring from 'qs'
 import crypto, { sign } from 'crypto'
 import { formatPrice } from "../../utils/formatPrice.js";
+import { client } from "../../config/mongodb.js";
 
 const create = async (data) => {
   return await orderModel.create(data);
@@ -141,174 +142,182 @@ const checkoutPage = async (req) => {
 const createPaymentUrl = async (req) => {
   const body = req.body
   delete body?.firebaseToken
-  const orderCreated = await orderModel.create({
-    name: body.name,
-    phone_number: body.phoneNumber,
-    email: body.email,
-    province: body.province,
-    district: body.district,
-    ward: body.ward,
-    note: body.note,
-    amount: body.amount
-  })
+  const session = await client.startSession()
+  session.startTransaction()
+  try {
+    const orderCreated = await orderModel.create({
+      name: body.name,
+      phone_number: body.phoneNumber,
+      email: body.email,
+      province_code: body.provinceCode,
+      province_name: body.provinceName,
+      district_code: body.districtCode,
+      district_name: body.districtName,
+      ward_code: body.wardCode,
+      ward_name: body.wardName,
+      address_detail: body.addressDetail,
+      note: body.note,
+      amount: body.amount,
+      lat: body.lat,
+      lng: body.lng
+    })
 
-  const itemMap = body.items.reduce((acc, item) => {
-    acc[item._id.toString()] = item
-    return acc
-  }, {})
+    const itemMap = body.items.reduce((acc, item) => {
+      acc[item._id.toString()] = item
+      return acc
+    }, {})
 
-  let variantColor = [];
-  for (const item of body.items) {
+    let variantColor = [];
+    for (const item of body.items) {
 
-    const varColor = await variantColorModel.findOne({
-      payload: {
-        _id: item._id,
-        is_active: true
+      const varColor = await variantColorModel.findOne({
+        payload: {
+          _id: item._id,
+          is_active: true
+        },
+        projection: {
+          is_active: 0
+        }
+      })
+
+
+      if (!varColor) {
+        throw new ErrorCustom('Sản phẩm không tồn tại hoặc đã ngừng bán', 400)
+      }
+      // const redisKey = `reserved-${item._id}`
+      // const reservedQuantity = parseInt(await redis.get(redisKey)) || 0;
+
+      // if(parseInt(varColor.stock) < parseInt(reservedQuantity)){
+      //   throw new ErrorCustom('Sản phẩm không đủ số lượng để bán', 400)
+      // }
+
+      // await redis.incrby(redisKey, item.quantity);  
+      // setTimeout(async () => {
+      //   await redis.decrby(redisKey, item.quantity);
+      // }, 15 * 60 * 1000)
+      variantColor.push(varColor);
+    }
+
+    const colorIds = variantColor.map(varColor => ConvertToObjectId(varColor.color_id));
+    const variantIds = variantColor.map(varColor => ConvertToObjectId(varColor.variant_id));
+
+    const colors = await colorModel.filter({
+      filter: {
+        _id: { $in: colorIds }
       },
       projection: {
-        is_active: 0
+        created_at: 0, updated_at: 0, deleted_at: 0, is_active: 0, status: 0
       }
     })
 
+    const colorMap = colors.reduce((acc, color) => {
+      acc[color._id.toString()] = color.name;
+      return acc
+    }, {})
 
-    if (!varColor) {
-      throw new ErrorCustom('Sản phẩm không tồn tại hoặc đã ngừng bán', 400)
+    let variants = await variantModel.filter({
+      filter: {
+        _id: { $in: variantIds }
+      },
+      projection: {
+        is_active: 0,
+        description: 0
+      }
+    })
+    const productIds = variants.map(v => ConvertToObjectId(v.product_id));
+
+    const products = await productsModel.filter({
+      filter: {
+        _id: { $in: productIds }
+      }
+    })
+
+    const productMap = products.reduce((acc, product) => {
+      acc[product._id.toString()] = product.name
+      return acc
+    }, {})
+
+    variants = variants.map(variant => ({
+      ...variant,
+      product_name: productMap[variant.product_id.toString()]
+    }))
+
+    const variantMap = variants.reduce((acc, variant) => {
+      acc[variant._id.toString()] = {
+        variant_name: variant.name,
+        product_name: variant.product_name
+      }
+      return acc
+    }, {})
+
+    const itemsOrder = variantColor.map(varColor => (
+      {
+        order_id: orderCreated.insertedId,
+        price: varColor.price,
+        img: varColor.img,
+        quantity: itemMap[varColor._id.toString()].quantity,
+        color: colorMap[varColor.color_id.toString()],
+        ...variantMap[varColor.variant_id.toString()]
+      }
+    ))
+
+    await orderItemModel.insertMany(itemsOrder);
+
+    let ipAddr = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress || '127.0.0.1';
+    if (ipAddr === '::1') ipAddr = '127.0.0.1';
+
+    var tmnCode = env.TMN_CODE;
+    var secretKey = env.SECRET_KEY
+    var vnpUrl = env.VNP_URL
+    var returnUrl = env.VNP_RETURN_URL;
+    var date = new Date();
+
+    var createDate = dateFormat(date, 'yyyymmddHHMMss');
+    var orderId = orderCreated.insertedId
+
+    var amount = req.body.amount;
+    var bankCode = req.body.bankCode || '';
+
+    var orderInfo = req.body.orderDescription || `Thanh toán đơn hàng ${orderId}`;
+    var orderType = req.body.orderType || 'other';
+    var locale = req.body.language || 'vn';
+    if (locale === null || locale === '') {
+      locale = 'vn';
     }
-    // const redisKey = `reserved-${item._id}`
-    // const reservedQuantity = parseInt(await redis.get(redisKey)) || 0;
-
-    // if(parseInt(varColor.stock) < parseInt(reservedQuantity)){
-    //   throw new ErrorCustom('Sản phẩm không đủ số lượng để bán', 400)
-    // }
-
-    // await redis.incrby(redisKey, item.quantity);  
-    // setTimeout(async () => {
-    //   await redis.decrby(redisKey, item.quantity);
-    // }, 15 * 60 * 1000)
-    variantColor.push(varColor);
-  }
-
-  const colorIds = variantColor.map(varColor => ConvertToObjectId(varColor.color_id));
-  const variantIds = variantColor.map(varColor => ConvertToObjectId(varColor.variant_id));
-
-  const colors = await colorModel.filter({
-    filter: {
-      _id: { $in: colorIds }
-    },
-    projection: {
-      created_at: 0, updated_at: 0, deleted_at: 0, is_active: 0, status: 0
+    var currCode = 'VND';
+    var vnp_Params = {};
+    vnp_Params['vnp_Version'] = '2.1.0';
+    vnp_Params['vnp_Command'] = 'pay';
+    vnp_Params['vnp_TmnCode'] = tmnCode;
+    // vnp_Params['vnp_Merchant'] = ''
+    vnp_Params['vnp_Locale'] = locale;
+    vnp_Params['vnp_CurrCode'] = currCode;
+    vnp_Params['vnp_TxnRef'] = orderId;
+    vnp_Params['vnp_OrderInfo'] = orderInfo;
+    vnp_Params['vnp_OrderType'] = orderType;
+    vnp_Params['vnp_Amount'] = amount * 100;
+    vnp_Params['vnp_ReturnUrl'] = returnUrl;
+    vnp_Params['vnp_IpAddr'] = ipAddr;
+    vnp_Params['vnp_CreateDate'] = createDate;
+    if (bankCode !== null && bankCode !== '') {
+      vnp_Params['vnp_BankCode'] = bankCode;
     }
-  })
+    vnp_Params = sortObject(vnp_Params);
 
-  const colorMap = colors.reduce((acc, color) => {
-    acc[color._id.toString()] = color.name;
-    return acc
-  }, {})
-
-  let variants = await variantModel.filter({
-    filter: {
-      _id: { $in: variantIds }
-    },
-    projection: {
-      is_active: 0
+    var signData = querystring.stringify(vnp_Params, { encode: false });
+    var hmac = crypto.createHmac("sha512", secretKey);
+    var secureHash = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex");
+    vnp_Params['vnp_SecureHash'] = secureHash;
+    vnpUrl += '?' + querystring.stringify(vnp_Params, { encode: false });
+    await session.commitTransaction()
+    return {
+      vnpUrl
     }
-  })
-  const productIds = variants.map(v => ConvertToObjectId(v.product_id));
-
-  const products = await productsModel.filter({
-    filter: {
-      _id: { $in: productIds }
-    }
-  })
-
-  const productMap = products.reduce((acc, product) => {
-    acc[product._id.toString()] = product.name
-    return acc
-  }, {})
-
-  variants = variants.map(variant => ({
-    ...variant,
-    product_name: productMap[variant.product_id.toString()]
-  }))
-
-  const variantMap = variants.reduce((acc, variant) => {
-    acc[variant._id.toString()] = {
-      variant_name: variant.name,
-      product_name: variant.product_name
-    }
-    return acc
-  }, {})
-
-  const itemsOrder = variantColor.map(varColor => (
-    {
-      order_id: orderCreated.insertedId,
-      price: varColor.price,
-      img: varColor.img,
-      quantity: itemMap[varColor._id.toString()].quantity,
-      color: colorMap[varColor.color_id.toString()],
-      ...variantMap[varColor.variant_id.toString()]
-    }
-  ))
-
-  await orderItemModel.insertMany(itemsOrder);
-
-
-  let ipAddr = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.socket.remoteAddress || '127.0.0.1';
-  if (ipAddr === '::1') ipAddr = '127.0.0.1';
-
-  // var ipAddr = req.headers['x-forwarded-for'] ||
-  // req.connection.remoteAddress ||
-  // req.socket.remoteAddress ||
-  // req.connection.socket.remoteAddress;
-
-  var tmnCode = env.TMN_CODE;
-
-  var secretKey = env.SECRET_KEY
-  var vnpUrl = env.VNP_URL
-  var returnUrl = env.VNP_RETURN_URL;
-
-  var date = new Date();
-
-  var createDate = dateFormat(date, 'yyyymmddHHMMss');
-  var orderId = orderCreated.insertedId
-
-  var amount = req.body.amount;
-  var bankCode = req.body.bankCode || '';
-
-  var orderInfo = req.body.orderDescription || `Thanh toán đơn hàng ${orderId}`;
-  var orderType = req.body.orderType || 'other';
-  var locale = req.body.language || 'vn';
-  if (locale === null || locale === '') {
-    locale = 'vn';
-  }
-  var currCode = 'VND';
-  var vnp_Params = {};
-  vnp_Params['vnp_Version'] = '2.1.0';
-  vnp_Params['vnp_Command'] = 'pay';
-  vnp_Params['vnp_TmnCode'] = tmnCode;
-  // vnp_Params['vnp_Merchant'] = ''
-  vnp_Params['vnp_Locale'] = locale;
-  vnp_Params['vnp_CurrCode'] = currCode;
-  vnp_Params['vnp_TxnRef'] = orderId;
-  vnp_Params['vnp_OrderInfo'] = orderInfo;
-  vnp_Params['vnp_OrderType'] = orderType;
-  vnp_Params['vnp_Amount'] = amount * 100;
-  vnp_Params['vnp_ReturnUrl'] = returnUrl;
-  vnp_Params['vnp_IpAddr'] = ipAddr;
-  vnp_Params['vnp_CreateDate'] = createDate;
-  if (bankCode !== null && bankCode !== '') {
-    vnp_Params['vnp_BankCode'] = bankCode;
-  }
-  vnp_Params = sortObject(vnp_Params);
-
-  var signData = querystring.stringify(vnp_Params, { encode: false });
-  var hmac = crypto.createHmac("sha512", secretKey);
-  var secureHash = hmac.update(Buffer.from(signData, 'utf-8')).digest("hex");
-  vnp_Params['vnp_SecureHash'] = secureHash;
-  vnpUrl += '?' + querystring.stringify(vnp_Params, { encode: false });
-
-  return {
-    vnpUrl
+  } catch (error) {
+    await session.abortTransaction()
+    throw error
+  } finally {
+    session.endSession()
   }
 }
 
@@ -329,28 +338,34 @@ const getVnpIpn = async (req) => {
   var hmac = crypto.createHmac('sha512', secretKey);
   var signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex')
 
-
   if (secureHash === signed) {
 
     // // xử lí đơn hàng,
     var orderId = vnpay_Params['vnp_TxnRef'];
     let paymentStt = paymentStatus.SUCCESS
+    let status = orderStatus.PENDING
     switch (vnpay_Params['vnp_ResponseCode']) {
       case '00':
         paymentStt = paymentStatus.SUCCESS
         break;
       case '11':
         paymentStt = paymentStatus.EXPIRED
+        status = orderStatus.CANCELED
         break;
       case '24':
         paymentStt = paymentStatus.CANCELED
+        status = orderStatus.CANCELED
         break;
       default:
         paymentStt = paymentStatus.FAILED
+        status = orderStatus.CANCELED
     }
-
-    const order = await orderModel.findOneAndUpdate(orderId, {
-      payment_status: paymentStt
+    
+    const order = await orderModel.findOneAndUpdate({
+      _id: orderId
+    }, {
+      payment_status: paymentStt,
+      status
     })
 
     const existTransaction = await transactionModel.findOne({
@@ -399,7 +414,7 @@ const getVnpIpn = async (req) => {
 
     // Gửi thông báo cho admin
     const socketId = onlineUsers.get(admin._id.toString())
-    
+
     if (socketId) {
       io.to(socketId).emit("notification_recent")
     }

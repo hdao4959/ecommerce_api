@@ -16,13 +16,13 @@ const app = express();
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5175']
+  origin: ['http://localhost:5173', 'http://localhost:5175', 'http://localhost:5176']
 }));
 
 const server = http.createServer(app)
 export const io = new Server(server, {
   cors: {
-    origin: ['http://localhost:5173', 'http://localhost:5175'],
+    origin: ['http://localhost:5173', 'http://localhost:5175', 'http://localhost:5176'],
     methods: ['GET', 'POST'],
     credentials: true
   }

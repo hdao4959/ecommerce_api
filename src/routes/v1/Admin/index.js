@@ -10,6 +10,7 @@ import AuthRoutes from './authRoutes.js';
 import { verifyToken } from '../../../middlewares/verifyToken.js';
 import { verifyAdmin } from '../../../middlewares/verifyAdmin.js';
 import notificationRoutes from './notificationRoutes.js';
+import shipperRoutes from './shipperRoutes.js';
 
 const AdminRouter = express.Router();
 AdminRouter.use('/auth', AuthRoutes)
@@ -26,6 +27,7 @@ AdminRouter.use('/variants', variantRoutes)
 AdminRouter.use('/colors', colorRoutes)
 AdminRouter.use('/orders', orderRoutes)
 AdminRouter.use('/users', userRoutes)
+AdminRouter.use('/shippers', shipperRoutes)
 AdminRouter.use('/specifications', specificationRoutes)
 AdminRouter.use('/notifications', notificationRoutes)
 export default AdminRouter

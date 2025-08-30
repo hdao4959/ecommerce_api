@@ -46,10 +46,19 @@ const findOne = async ({ payload = {}, projection = {} } = {}) => {
   return await collection().findOne(payload, { projection });
 }
 
-const findOneAndUpdate = async (id, data, options = {}) => {
-  return await collection().findOneAndUpdate(
-    { _id: ConvertToObjectId(id) },
 
+const update = async (conditions, data, options = {}) => {
+  return await collection().updateOne(
+    conditions,
+    {
+      $set: data
+    },
+    options)
+}
+
+const findOneAndUpdate = async (conditions, data, options = {}) => {
+  return await collection().findOneAndUpdate(
+    conditions,
     {
       $set: data
     },
@@ -67,5 +76,5 @@ const countFiltered = (condition = {}) => {
   return collection().countDocuments(condition)
 }
 export default {
-  create, getAll, findOne, findOneAndUpdate, countAll, countFiltered
+  create, getAll, findOne, findOneAndUpdate, countAll, countFiltered, update
 }

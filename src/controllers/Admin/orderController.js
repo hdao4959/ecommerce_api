@@ -3,6 +3,7 @@ import { successResponse } from "../../utils/response.js";
 
 const getAll = async (req, res, next) => {
   try {
+    
     const orderWithMeta = await orderService.getAllWithMetadata(req.query);
     return successResponse(res, {
       data: {
@@ -32,13 +33,21 @@ const changeStatus = async (req, res, next) => {
   try {
     const params = req.params
     const body = req.body
-    
     await orderService.changeStatus(params.id, { status: body.status })
     return successResponse(res, { message: "Thay đổi trạng thái đơn hàng thành công!" }, 200)
   } catch (error) {
     next(error)
   }
 }
+
+const autoAssignOrdersForShipper = async (req, res, next) => {
+  try {
+    const result = await orderService.autoAssignOrdersForShipper();
+    
+  } catch (error) {
+    next(error)
+  }
+}
 export default {
-  getAll, detail, changeStatus
+  getAll, detail, changeStatus, autoAssignOrdersForShipper
 }

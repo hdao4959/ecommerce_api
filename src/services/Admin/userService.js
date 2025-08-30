@@ -98,7 +98,6 @@ const create = async (data) => {
   data.password = await hash.hashPassword(data.password)
   delete data.confirm_password;
   data.login_type = LOGIN_TYPE.email
-  data.role = USER_ROLE.client
   return await userModel.create(data)
 }
 
